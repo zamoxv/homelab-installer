@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# HLI-MODULE: qbittorrent
+# HLI-DESC: qBittorrent-nox como servicio
+# HLI-ORDER: 60
+# HLI-DEFAULT: yes
+# HLI-TUI: no
 set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"
 

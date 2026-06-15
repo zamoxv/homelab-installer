@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# HLI-MODULE: jellyfin
+# HLI-DESC: Servidor multimedia Jellyfin
+# HLI-ORDER: 50
+# HLI-DEFAULT: yes
+# HLI-TUI: no
 set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"
 

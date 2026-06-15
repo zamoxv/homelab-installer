@@ -69,9 +69,14 @@ main_menu() {
 }
 
 install_full() {
-  confirm "Se instalará base, almacenamiento, WOL, Samba, Jellyfin, qBittorrent y AdGuard Home.\n\n¿Continuar?" || return
+  local list="" m
+  for m in $(list_modules); do
+    [[ "$(module_meta "$m" DEFAULT)" == "yes" ]] && list+="${list:+ }$m"
+  done
 
-  for m in $FULL_INSTALL_MODULES; do
+  confirm "Se instalarán los módulos recomendados:\n\n$list\n\n¿Continuar?" || return
+
+  for m in $list; do
     run_module "$m"
   done
 
@@ -80,19 +85,19 @@ install_full() {
 }
 
 install_custom() {
+  local args=() m desc state
+  for m in $(list_modules); do
+    desc="$(module_meta "$m" DESC)"
+    [[ "$(module_meta "$m" DEFAULT)" == "yes" ]] && state="ON" || state="OFF"
+    args+=("$m" "$desc" "$state")
+  done
+
   SERVICES=$(dialog --clear \
     --backtitle "HomeLab Installer v0.2" \
     --title "Instalación personalizada" \
     --checklist "Seleccione módulos:" \
     22 82 12 \
-    base "Paquetes base y utilidades" ON \
-    storage "Estructura /srv" ON \
-    wol "Wake-on-LAN" ON \
-    samba "Samba + carpetas compartidas" ON \
-    jellyfin "Servidor multimedia Jellyfin" ON \
-    qbittorrent "qBittorrent-nox como servicio" ON \
-    adguard "AdGuard Home" ON \
-    status "Ver estado" OFF \
+    "${args[@]}" \
     3>&1 1>&2 2>&3) || return
 
   for item in $SERVICES; do

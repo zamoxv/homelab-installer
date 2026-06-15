@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# HLI-MODULE: adguard
+# HLI-DESC: AdGuard Home
+# HLI-ORDER: 70
+# HLI-DEFAULT: yes
+# HLI-TUI: no
 set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"
 

@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# HLI-MODULE: base
+# HLI-DESC: Paquetes base y utilidades
+# HLI-ORDER: 10
+# HLI-DEFAULT: yes
+# HLI-TUI: no
 set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"
 

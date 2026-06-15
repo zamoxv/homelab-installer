@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# HLI-MODULE: restore
+# HLI-DESC: Restaurar desde disco antiguo
+# HLI-ORDER: 80
+# HLI-DEFAULT: no
+# HLI-TUI: yes
 set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"
 

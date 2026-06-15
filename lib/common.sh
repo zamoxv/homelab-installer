@@ -56,6 +56,26 @@ input_box() {
   dialog --title "$title" --inputbox "$prompt" 10 76 "$default" 3>&1 1>&2 2>&3
 }
 
+# --- Plugin System: descubrimiento de módulos ---
+
+# Devuelve el valor de una clave de metadata (HLI-<KEY>) de un módulo.
+module_meta() {
+  local module="$1" key="$2"
+  sed -n "s/^# HLI-${key}:[[:space:]]*//p" "$SCRIPT_DIR/modules/$module.sh" | head -n1
+}
+
+# Lista los IDs de los módulos registrados, ordenados por HLI-ORDER.
+list_modules() {
+  local f id order
+  for f in "$SCRIPT_DIR"/modules/*.sh; do
+    [[ -f "$f" ]] || continue
+    grep -q '^# HLI-MODULE:' "$f" || continue
+    id="$(basename "$f" .sh)"
+    order="$(module_meta "$id" ORDER)"
+    printf '%s\t%s\n' "${order:-999}" "$id"
+  done | sort -n | cut -f2
+}
+
 run_module() {
   local module="$1"
   local path="$SCRIPT_DIR/modules/$module.sh"
@@ -66,7 +86,14 @@ run_module() {
   fi
 
   log "Iniciando módulo: $module"
-  bash "$path" 2>&1 | sudo tee -a "$LOG_DIR/$module.log"
+  if [[ "$(module_meta "$module" TUI)" == "yes" ]]; then
+    # Módulo interactivo (dialog/prompts/smbpasswd): hereda la terminal real
+    # para que la TUI se dibuje y capture entradas correctamente.
+    bash "$path"
+  else
+    # Módulo batch: vuelca la salida a la terminal y al log del módulo.
+    bash "$path" 2>&1 | sudo tee -a "$LOG_DIR/$module.log"
+  fi
   log "Finalizado módulo: $module"
 }
 

@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# HLI-MODULE: samba
+# HLI-DESC: Samba + carpetas compartidas
+# HLI-ORDER: 40
+# HLI-DEFAULT: yes
+# HLI-TUI: yes
 set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"
 

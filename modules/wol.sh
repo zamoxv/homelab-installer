@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# HLI-MODULE: wol
+# HLI-DESC: Wake-on-LAN
+# HLI-ORDER: 30
+# HLI-DEFAULT: yes
+# HLI-TUI: yes
 set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"
 

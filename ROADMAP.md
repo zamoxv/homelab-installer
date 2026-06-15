@@ -59,14 +59,15 @@ arquitectura:
 El refactor que sostiene todo lo demás. Se hace antes que cualquier módulo nuevo
 porque todos dependen de él.
 
-- [ ] Contrato de módulo: cabecera de metadata (nombre, descripción, orden,
-  perfil) que cada módulo expone.
-- [ ] Auto-discovery: el menú y la "instalación completa" se construyen leyendo
-  `modules/`, no listas escritas a mano.
-- [ ] Eliminar listas hardcodeadas (`ui/menu.sh`, `FULL_INSTALL_MODULES`).
-- [ ] Reescribir `run_module` para no romper la TUI: separar el render de
-  `dialog` del logging (hoy el pipe a `tee` corrompe el checklist en `samba` y
-  `restore`).
+- [x] Contrato de módulo: cabecera de metadata que cada módulo expone con 5
+  claves — `HLI-MODULE`, `HLI-DESC`, `HLI-ORDER`, `HLI-DEFAULT` (entra en
+  instalación completa / pre-marcado) y `HLI-TUI` (es interactivo).
+- [x] Auto-discovery: el menú y la "instalación completa" se construyen leyendo
+  `modules/` (`list_modules` + `module_meta`), no listas escritas a mano.
+- [x] Eliminar listas hardcodeadas (`ui/menu.sh`, `FULL_INSTALL_MODULES`).
+- [x] Reescribir `run_module` para no romper la TUI: los módulos `TUI: yes`
+  heredan la terminal real (dialog/prompts/smbpasswd funcionan); los batch se
+  siguen volcando al log. Mata el bug del pipe a `tee` en `samba` y `restore`.
 
 ### v0.5 — Power Management + Perfiles de servidor
 
