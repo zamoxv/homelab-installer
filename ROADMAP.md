@@ -94,12 +94,16 @@ porque todos dependen de él.
 
 ### v0.8 — Experiencia / Producto
 
-- [ ] Dashboard enriquecido: hostname, distro, IP, disco, memoria, estado de
-  servicios y barra de espacio.
-- [ ] Barra de progreso por instalación.
-- [ ] Detección automática: interfaz de red y hardware (modelo, CPU, RAM, disco).
-- [ ] Modo actualización: `apt update`/`upgrade`, limpieza de paquetes y cachés,
-  reinicio de servicios cuando corresponde.
+- [x] Dashboard enriquecido: equipo (modelo), CPU, RAM, disco (tipo SSD/HDD),
+  distro, IP, estado de servicios y barra ASCII de espacio.
+- [x] Barra de progreso por módulo en "instalación completa" (`dialog --gauge`,
+  módulo en segundo plano, salida al log, aviso si falla).
+- [x] Detección automática: interfaz de red (`detect_iface`) y hardware
+  (`hw_model`/`hw_cpu`/`hw_ram`/`hw_disk`).
+- [x] Modo actualización: `modules/update.sh` (`apt update`/`full-upgrade`,
+  `autoremove`, `autoclean`).
+- [x] apt no-interactivo (confdef/confold + needrestart auto) y `sudo` con
+  keep-alive: instalaciones en segundo plano sin prompts que cuelguen.
 
 ### v1.0 — Release
 

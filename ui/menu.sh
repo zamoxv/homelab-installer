@@ -2,12 +2,16 @@
 set -euo pipefail
 
 show_dashboard() {
-  local ip host kernel disk mem jf qb smb ag
+  local ip host kernel os model cpu ram disk_root disk_use jf qb smb ag
   ip="$(get_ip || true)"
   host="$(hostname)"
   kernel="$(uname -r)"
-  disk="$(df -h / | awk 'NR==2 {print $3 " usado / " $2 " total (" $5 ")"}')"
-  mem="$(free -h | awk '/Mem:/ {print $3 " usado / " $2 " total"}')"
+  os="$(os_pretty)"
+  model="$(hw_model)"
+  cpu="$(hw_cpu)"
+  ram="$(hw_ram)"
+  disk_root="$(hw_disk)"
+  disk_use="$(space_bar)"
 
   jf="$(service_state jellyfin)"
   qb="$(service_state qbittorrent)"
@@ -15,29 +19,38 @@ show_dashboard() {
   ag="$(service_state AdGuardHome)"
 
   cat > /tmp/homelab-dashboard.txt <<EOF
-HomeLab Installer v0.2
+========================================================
+            HomeLab Installer
+========================================================
 
-Servidor : $host
-Usuario  : $SERVER_USER
-IP       : ${ip:-sin IP}
-Kernel   : $kernel
+Equipo    : ${model:-N/D}
+CPU       : ${cpu:-N/D}
+Memoria   : ${ram:-N/D}
+Disco     : ${disk_root:-N/D}
 
-Disco    : $disk
-Memoria  : $mem
+Servidor  : $host
+Usuario   : $SERVER_USER
+Sistema   : $os
+Kernel    : $kernel
+IP        : ${ip:-sin IP}
 
-Servicios:
+Servicios
   Jellyfin      : $jf
   qBittorrent   : $qb
   Samba         : $smb
   AdGuard Home  : $ag
 
-Rutas:
+Espacio en /
+  $disk_use
+
+Rutas
   Media         : $MEDIA_ROOT
   Backups       : $BACKUP_ROOT
   Logs          : $LOG_DIR
+========================================================
 EOF
 
-  dialog --title "Dashboard" --textbox /tmp/homelab-dashboard.txt 24 90
+  dialog --title "Dashboard" --textbox /tmp/homelab-dashboard.txt 30 92
 }
 
 main_menu() {
@@ -54,9 +67,10 @@ main_menu() {
       5 "Configurar Samba + carpetas" \
       6 "Backup de configuración" \
       7 "Restaurar (backup o disco viejo)" \
-      8 "Estado de servicios" \
-      9 "Diagnóstico (Health Check)" \
-      10 "Salir" \
+      8 "Actualizar servidor" \
+      9 "Estado de servicios" \
+      10 "Diagnóstico (Health Check)" \
+      11 "Salir" \
       3>&1 1>&2 2>&3) || exit 0
 
     case "$CHOICE" in
@@ -67,23 +81,52 @@ main_menu() {
       5) run_module storage; run_module samba ;;
       6) run_module backup ;;
       7) run_module restore ;;
-      8) run_module status ;;
-      9) run_module healthcheck ;;
-      10) clear; exit 0 ;;
+      8) run_module update ;;
+      9) run_module status ;;
+      10) run_module healthcheck ;;
+      11) clear; exit 0 ;;
     esac
   done
 }
 
+# Corre un módulo batch en segundo plano mostrando una barra de progreso.
+# La salida va al log; si el módulo falla, avisa con la ruta del log.
+run_module_gauge() {
+  local module="$1" title="$2" pid rc p
+  run_module_quiet "$module" &
+  pid=$!
+  (
+    p=5
+    while kill -0 "$pid" 2>/dev/null; do
+      echo "$p"
+      if (( p < 90 )); then p=$((p + 5)); fi
+      sleep 1
+    done
+    echo 100
+  ) | dialog --title "$title" --gauge "Instalando $module..." 8 70 5
+  rc=0
+  wait "$pid" || rc=$?
+  if [[ $rc -ne 0 ]]; then
+    msg "El módulo '$module' terminó con errores (código $rc).\n\nRevisá el log:\n$LOG_DIR/$module.log"
+  fi
+}
+
 install_full() {
-  local list="" m
+  local all=() m i=0 total
   for m in $(list_modules); do
-    [[ "$(module_meta "$m" DEFAULT)" == "yes" ]] && list+="${list:+ }$m"
+    [[ "$(module_meta "$m" DEFAULT)" == "yes" ]] && all+=("$m")
   done
+  total=${#all[@]}
 
-  confirm "Se instalarán los módulos recomendados:\n\n$list\n\n¿Continuar?" || return
+  confirm "Se instalarán $total módulos recomendados:\n\n${all[*]}\n\n¿Continuar?" || return
 
-  for m in $list; do
-    run_module "$m"
+  for m in "${all[@]}"; do
+    i=$((i + 1))
+    if [[ "$(module_meta "$m" TUI)" == "yes" ]]; then
+      run_module "$m"
+    else
+      run_module_gauge "$m" "Instalación completa ($i/$total)"
+    fi
   done
 
   run_module status

@@ -24,6 +24,17 @@ ensure_runtime() {
   sudo mkdir -p "$LOG_DIR" "$STATE_DIR"
   sudo touch "$STATE_FILE"
   sudo chown -R "$USER:$USER" "$STATE_DIR" || true
+
+  # apt no-interactivo: resuelve prompts de config (confdef/confold) y desactiva
+  # el menú de needrestart. Imprescindible para módulos que corren en segundo
+  # plano bajo la barra de progreso (un prompt invisible colgaría la instalación).
+  echo 'Dpkg::Options { "--force-confdef"; "--force-confold"; };' \
+    | sudo tee /etc/apt/apt.conf.d/99homelab >/dev/null
+  if [[ -d /etc/needrestart ]]; then
+    sudo mkdir -p /etc/needrestart/conf.d
+    echo "\$nrconf{restart} = 'a';" \
+      | sudo tee /etc/needrestart/conf.d/99homelab.conf >/dev/null
+  fi
 }
 
 log() {
@@ -95,6 +106,64 @@ run_module() {
     bash "$path" 2>&1 | sudo tee -a "$LOG_DIR/$module.log"
   fi
   log "Finalizado módulo: $module"
+}
+
+# Ejecuta un módulo volcando TODA su salida al log (sin terminal). Lo usa la
+# barra de progreso para correr el módulo en segundo plano. Devuelve el código
+# de salida del módulo.
+run_module_quiet() {
+  local module="$1"
+  local path="$SCRIPT_DIR/modules/$module.sh"
+  [[ -x "$path" ]] || return 1
+  log "Iniciando módulo (silencioso): $module"
+  bash "$path" 2>&1 | sudo tee -a "$LOG_DIR/$module.log" >/dev/null
+}
+
+# --- Detección de hardware (best-effort, solo lectura) ---
+
+os_pretty() {
+  ( . /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-$(uname -sr)}" )
+}
+
+hw_model() {
+  local vendor product
+  vendor="$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null)"
+  product="$(cat /sys/class/dmi/id/product_name 2>/dev/null)"
+  echo "$vendor $product" | xargs
+}
+
+hw_cpu() {
+  lscpu 2>/dev/null | sed -n 's/^Model name:[[:space:]]*//p' | head -n1
+}
+
+hw_ram() {
+  free -h 2>/dev/null | awk '/Mem:/ {print $2}'
+}
+
+hw_disk() {
+  local src disk size rota typ
+  # Quita la notación de subvolumen btrfs: /dev/x[/subvol] -> /dev/x
+  src="$(findmnt -no SOURCE / 2>/dev/null | sed 's/\[.*//')"
+  # Sube hasta el disco físico que contiene la raíz.
+  disk="$(lsblk -no PKNAME "$src" 2>/dev/null | head -n1)"
+  [[ -z "$disk" ]] && disk="$(lsblk -ndo NAME "$src" 2>/dev/null | head -n1)"
+  [[ -z "$disk" ]] && { echo "N/D"; return; }
+  size="$(lsblk -dno SIZE "/dev/$disk" 2>/dev/null | head -n1)"
+  rota="$(lsblk -dno ROTA "/dev/$disk" 2>/dev/null | head -n1)"
+  [[ "$rota" == "0" ]] && typ="SSD" || typ="HDD"
+  echo "/dev/$disk ${size:-?} ($typ)"
+}
+
+# Barra ASCII del uso de la partición raíz.
+space_bar() {
+  local pct filled i bar=""
+  pct="$(df / 2>/dev/null | awk 'NR==2 {gsub("%","",$5); print $5}')"
+  pct="${pct:-0}"
+  filled=$(( pct * 20 / 100 ))
+  for ((i = 0; i < 20; i++)); do
+    [[ $i -lt $filled ]] && bar+="#" || bar+="."
+  done
+  echo "[$bar] ${pct}%"
 }
 
 get_ip() {

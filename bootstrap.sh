@@ -3,6 +3,16 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+export DEBIAN_FRONTEND=noninteractive
+
+# Pedir sudo una vez y mantenerlo vigente durante toda la sesión, para que un
+# módulo corriendo en segundo plano (bajo la barra de progreso) no se cuelgue
+# esperando la contraseña.
+sudo -v
+( while true; do sudo -n true 2>/dev/null || exit; sleep 60; kill -0 "$$" 2>/dev/null || exit; done ) &
+SUDO_KEEPALIVE_PID=$!
+trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true' EXIT
+
 if ! command -v dialog >/dev/null 2>&1; then
   echo "Instalando dialog..."
   sudo apt update
