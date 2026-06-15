@@ -27,14 +27,6 @@ system_disk() {
   echo "${p2:-$p1}"
 }
 
-# Nombre del VG del sistema (vacío si la raíz no está sobre LVM).
-sys_vg() {
-  command -v lvs >/dev/null 2>&1 || { echo ""; return; }
-  local src
-  src="$(findmnt -no SOURCE / 2>/dev/null | sed 's/\[.*//')"
-  sudo lvs --noheadings -o vg_name "$src" 2>/dev/null | tr -d ' ' || true
-}
-
 # UUID del VG cuyo PV está en el disco $1 (vacío si el disco no es LVM).
 vg_uuid_on_disk() {
   sudo pvs --noheadings -o pv_name,vg_uuid 2>/dev/null \
@@ -48,7 +40,6 @@ vg_name_by_uuid() {
 
 # --- 1. Detección (solo lectura) ---
 SYS_DISK="$(system_disk)"
-SYS_VG="$(sys_vg)"
 
 mapfile -t cand < <(lsblk -dno NAME,TYPE 2>/dev/null | awk -v s="$SYS_DISK" '$2 == "disk" && $1 != s {print $1}')
 
@@ -77,20 +68,21 @@ OLD_UUID=""
 command -v pvs >/dev/null 2>&1 && OLD_UUID="$(vg_uuid_on_disk "$DISK")"
 
 if [[ -n "$OLD_UUID" ]]; then
-  # Disco con LVM.
+  # Disco con LVM. Renombramos SIEMPRE el VG viejo a un nombre único por UUID
+  # ('oldvg'). Dos discos Ubuntu suelen tener ambos un 'ubuntu-vg', y con nombres
+  # duplicados LVM rechaza operar por nombre — por eso renombramos por UUID, que
+  # nunca es ambiguo. Si ya se llama 'oldvg', no se vuelve a renombrar.
   OLD_NAME="$(vg_name_by_uuid "$OLD_UUID")"
 
-  if [[ -n "$SYS_VG" && "$OLD_NAME" == "$SYS_VG" ]]; then
-    confirm "Colisión de nombres de LVM.\n\nEl disco viejo tiene un VG '$OLD_NAME', igual que el del sistema. Para leerlo hay que renombrar el VG VIEJO (UUID $OLD_UUID) a 'oldvg'.\n\nSolo modifica la metadata del disco viejo. ¿Continuar?" || exit 0
+  if [[ "$OLD_NAME" != "oldvg" ]]; then
+    confirm "Disco viejo con LVM detectado.\n\nVG viejo : ${OLD_NAME:-desconocido}\nUUID     : $OLD_UUID\n\nSe renombrará a 'oldvg' (por UUID) para leerlo sin chocar con el VG del sistema. Solo cambia la metadata del disco viejo. ¿Continuar?" || exit 0
     sudo vgrename "$OLD_UUID" oldvg
-    ACTIVE_VG="oldvg"
-  else
-    ACTIVE_VG="$OLD_NAME"
   fi
+  ACTIVE_VG="oldvg"
 
-  sudo vgchange -ay "$ACTIVE_VG" >/dev/null
+  sudo vgchange -ay oldvg >/dev/null
 
-  for lv in $(sudo lvs --noheadings -o lv_path "$ACTIVE_VG" 2>/dev/null | tr -d ' ' || true); do
+  for lv in $(sudo lvs --noheadings -o lv_path oldvg 2>/dev/null | tr -d ' ' || true); do
     if sudo mount -o ro "$lv" "$MNT" 2>/dev/null; then
       if [[ -e "$MNT/etc/os-release" || -d "$MNT/var/lib" ]]; then
         OLD_ROOT="$MNT"; break
