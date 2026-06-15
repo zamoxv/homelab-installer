@@ -121,6 +121,25 @@ nos obligó a expandir el LVM a mano — esto no debería volver a pasar.
 - [ ] `healthcheck.sh` marca con ⚠ cuando hay espacio sin asignar en el VG y
   ofrece "reparar" (correr la expansión) desde el propio informe.
 
+### v0.10 — Migración asistida (disco viejo automático)
+
+**Objetivo (el norte del proyecto):** servidor recién instalado + disco viejo
+conectado por USB → toda la migración desde el HLI, sin comandos a mano. Esto es
+lo que vuelve al HLI un instalador "completo": que un equipo nuevo herede al
+anterior en minutos.
+
+- [ ] Detectar discos conectados que NO sean el del sistema (`lsblk`).
+- [ ] Activar el LVM del disco viejo (`vgscan` / `vgchange -ay`) y **resolver la
+  colisión de nombres**: si hay dos `ubuntu-vg`, renombrar el viejo por UUID
+  (`vgrename <UUID> oldvg`) automáticamente.
+- [ ] Montar la raíz del disco viejo en un punto temporal y pasárselo al
+  `restore` sin que el usuario tipee la ruta.
+- [ ] Al terminar: desmontar y desactivar el VG viejo de forma limpia.
+- [ ] (Opcional) Ofrecer copiar también carpetas de media seleccionadas del
+  disco viejo, avisando tamaño y tiempo estimado.
+- [ ] Guardas de seguridad: nunca tocar el disco del sistema; confirmar siempre
+  antes de renombrar un VG o montar; todo reversible.
+
 ### v1.0 — Release
 
 - [ ] README completo, `CHANGELOG.md`, `docs/`.
