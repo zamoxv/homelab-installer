@@ -22,6 +22,7 @@ After=network.target
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=/usr/sbin/ethtool -s $IFACE wol g
 
 [Install]
