@@ -187,3 +187,34 @@ service_state() {
     echo "not-installed"
   fi
 }
+
+# Restaura componentes (Jellyfin, qBittorrent, Samba) leyendo desde la raíz de
+# un sistema de archivos viejo montado en $1. Copia solo lo que existe. Lo usan
+# tanto "restaurar desde disco viejo" como la migración asistida.
+restore_components_from_root() {
+  local root="$1" home
+  home="$(getent passwd "$SERVER_USER" | cut -d: -f6)"
+  home="${home:-/home/$SERVER_USER}"
+
+  if [[ -d "$root/var/lib/jellyfin" ]]; then
+    sudo systemctl stop jellyfin 2>/dev/null || true
+    sudo rsync -aHAX "$root/var/lib/jellyfin/" /var/lib/jellyfin/
+    sudo chown -R jellyfin:jellyfin /var/lib/jellyfin 2>/dev/null || true
+    sudo systemctl start jellyfin 2>/dev/null || true
+  fi
+
+  if [[ -d "$root/home/$SERVER_USER/.config/qBittorrent" ]]; then
+    sudo systemctl stop qbittorrent 2>/dev/null || true
+    mkdir -p "$home/.config/qBittorrent" "$home/.local/share/qBittorrent"
+    rsync -aHAX "$root/home/$SERVER_USER/.config/qBittorrent/" "$home/.config/qBittorrent/"
+    [[ -d "$root/home/$SERVER_USER/.local/share/qBittorrent" ]] \
+      && rsync -aHAX "$root/home/$SERVER_USER/.local/share/qBittorrent/" "$home/.local/share/qBittorrent/"
+    sudo systemctl start qbittorrent 2>/dev/null || true
+  fi
+
+  if [[ -f "$root/etc/samba/smb.conf" ]]; then
+    sudo cp /etc/samba/smb.conf "/etc/samba/smb.conf.backup.$(date +%F-%H%M%S)" 2>/dev/null || true
+    sudo cp "$root/etc/samba/smb.conf" /etc/samba/smb.conf
+    sudo systemctl restart smbd 2>/dev/null || true
+  fi
+}

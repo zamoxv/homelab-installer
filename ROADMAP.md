@@ -128,17 +128,18 @@ conectado por USB → toda la migración desde el HLI, sin comandos a mano. Esto
 lo que vuelve al HLI un instalador "completo": que un equipo nuevo herede al
 anterior en minutos.
 
-- [ ] Detectar discos conectados que NO sean el del sistema (`lsblk`).
-- [ ] Activar el LVM del disco viejo (`vgscan` / `vgchange -ay`) y **resolver la
-  colisión de nombres**: si hay dos `ubuntu-vg`, renombrar el viejo por UUID
-  (`vgrename <UUID> oldvg`) automáticamente.
-- [ ] Montar la raíz del disco viejo en un punto temporal y pasárselo al
-  `restore` sin que el usuario tipee la ruta.
-- [ ] Al terminar: desmontar y desactivar el VG viejo de forma limpia.
+- [x] Detectar discos conectados que NO sean el del sistema (`lsblk`), con
+  dry-run que muestra tamaño/modelo para confirmar.
+- [x] Activar el LVM del disco viejo (`vgchange -ay`) y **resolver la colisión
+  de nombres**: si el VG viejo se llama igual que el del sistema, renombrarlo por
+  UUID (`vgrename <UUID> oldvg`) automáticamente, con confirmación.
+- [x] Montar la raíz del disco viejo (auto-detectada por `/etc`) y pasársela al
+  helper de restauración sin que el usuario tipee la ruta.
+- [x] Al terminar: desmontar y desactivar el VG viejo de forma limpia (trap).
 - [ ] (Opcional) Ofrecer copiar también carpetas de media seleccionadas del
   disco viejo, avisando tamaño y tiempo estimado.
-- [ ] Guardas de seguridad: nunca tocar el disco del sistema; confirmar siempre
-  antes de renombrar un VG o montar; todo reversible.
+- [x] Guardas de seguridad: nunca tocar el disco del sistema; montaje en SOLO
+  LECTURA; identificación por UUID; confirmación antes de renombrar VG o restaurar.
 
 ### v1.0 — Release
 

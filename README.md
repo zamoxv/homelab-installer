@@ -49,10 +49,11 @@ la sesión para que los módulos en segundo plano no se cuelguen).
 | 5 | Configurar Samba + carpetas |
 | 6 | Backup de configuración |
 | 7 | Restaurar (backup HLI o disco viejo) |
-| 8 | Actualizar servidor |
-| 9 | Estado de servicios |
-| 10 | Diagnóstico (Health Check) |
-| 11 | Salir |
+| 8 | Migración asistida (disco viejo automático) |
+| 9 | Actualizar servidor |
+| 10 | Estado de servicios |
+| 11 | Diagnóstico (Health Check) |
+| 12 | Salir |
 
 ## Módulos
 
@@ -69,6 +70,7 @@ Descubiertos automáticamente y ordenados por `HLI-ORDER`:
 | `jellyfin` | Servidor multimedia Jellyfin | ✅ |
 | `qbittorrent` | qBittorrent-nox como servicio | ✅ |
 | `adguard` | AdGuard Home | ✅ |
+| `migrate` | Migración asistida (disco viejo automático) | — |
 | `restore` | Restaurar (backup HLI o disco viejo) | — |
 | `backup` | Backup de configuración y estado | — |
 | `status` | Ver estado de servicios | — |

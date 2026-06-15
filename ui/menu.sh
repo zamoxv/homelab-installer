@@ -59,7 +59,7 @@ main_menu() {
       --backtitle "HomeLab Installer v0.2" \
       --title "Menú principal" \
       --menu "Seleccione una opción:" \
-      20 78 10 \
+      22 80 12 \
       1 "Dashboard del servidor" \
       2 "Instalación completa recomendada" \
       3 "Instalación personalizada" \
@@ -67,10 +67,11 @@ main_menu() {
       5 "Configurar Samba + carpetas" \
       6 "Backup de configuración" \
       7 "Restaurar (backup o disco viejo)" \
-      8 "Actualizar servidor" \
-      9 "Estado de servicios" \
-      10 "Diagnóstico (Health Check)" \
-      11 "Salir" \
+      8 "Migración asistida (disco viejo automático)" \
+      9 "Actualizar servidor" \
+      10 "Estado de servicios" \
+      11 "Diagnóstico (Health Check)" \
+      12 "Salir" \
       3>&1 1>&2 2>&3) || exit 0
 
     case "$CHOICE" in
@@ -81,10 +82,11 @@ main_menu() {
       5) run_module storage; run_module samba ;;
       6) run_module backup ;;
       7) run_module restore ;;
-      8) run_module update ;;
-      9) run_module status ;;
-      10) run_module healthcheck ;;
-      11) clear; exit 0 ;;
+      8) run_module migrate ;;
+      9) run_module update ;;
+      10) run_module status ;;
+      11) run_module healthcheck ;;
+      12) clear; exit 0 ;;
     esac
   done
 }

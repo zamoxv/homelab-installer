@@ -55,46 +55,10 @@ restore_from_backup() {
 }
 
 restore_from_old_disk() {
-  local old_root options opt home
-  old_root=$(input_box "Restaurar" "Ruta raíz del disco viejo montado:" "/media/$USER/ubuntu-root") || return
-
-  options=$(dialog --clear \
-    --backtitle "HomeLab Installer v0.2" \
-    --title "Restaurar desde disco viejo" \
-    --checklist "Seleccione qué restaurar:" \
-    18 82 8 \
-    jellyfin "Restaurar /var/lib/jellyfin" ON \
-    qbittorrent "Restaurar configuración de qBittorrent" ON \
-    3>&1 1>&2 2>&3) || return
-
-  home="$(qb_home)"
-  for opt in $options; do
-    opt="${opt//\"/}"
-    case "$opt" in
-      jellyfin)
-        sudo systemctl stop jellyfin || true
-        if [[ -d "$old_root/var/lib/jellyfin" ]]; then
-          sudo rsync -aHAX "$old_root/var/lib/jellyfin/" /var/lib/jellyfin/
-          sudo chown -R jellyfin:jellyfin /var/lib/jellyfin
-        else
-          msg "No se encontró $old_root/var/lib/jellyfin"
-        fi
-        sudo systemctl start jellyfin || true
-        ;;
-      qbittorrent)
-        sudo systemctl stop qbittorrent || true
-        mkdir -p "$home/.config/qBittorrent" "$home/.local/share/qBittorrent"
-        if [[ -d "$old_root/home/$SERVER_USER/.config/qBittorrent" ]]; then
-          rsync -aHAX "$old_root/home/$SERVER_USER/.config/qBittorrent/" "$home/.config/qBittorrent/"
-        fi
-        if [[ -d "$old_root/home/$SERVER_USER/.local/share/qBittorrent" ]]; then
-          rsync -aHAX "$old_root/home/$SERVER_USER/.local/share/qBittorrent/" "$home/.local/share/qBittorrent/"
-        fi
-        sudo systemctl start qbittorrent || true
-        ;;
-    esac
-  done
-
+  local old_root
+  old_root=$(input_box "Restaurar" "Ruta raíz del disco viejo montado:" "/mnt/old") || return
+  [[ -d "$old_root" ]] || { msg "No existe la ruta:\n$old_root"; return; }
+  restore_components_from_root "$old_root"
   msg "Restauración desde disco viejo finalizada."
 }
 
