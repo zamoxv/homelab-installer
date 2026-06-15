@@ -87,9 +87,10 @@ porque todos dependen de él.
 
 ### v0.7 — Backup y Restore de migración
 
-- [ ] `modules/backup.sh`: genera `backup-YYYY-MM-DD.tar.gz` con Jellyfin,
-  Samba, qBittorrent, configuración y un `config.yml` exportable.
-- [ ] Restore robusto de migración (más allá del básico actual).
+- [x] `modules/backup.sh`: genera `backup-YYYY-MM-DD.tar.gz` con config/estado
+  de Jellyfin, qBittorrent, Samba y HLI + manifiesto `config.yml`. Sin media.
+- [x] `restore.sh` con dos orígenes: backup HLI (.tar.gz) o disco viejo montado;
+  restaura cada componente a su lugar y arregla permisos/servicios.
 
 ### v0.8 — Experiencia / Producto
 

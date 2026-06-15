@@ -52,10 +52,11 @@ main_menu() {
       3 "Instalación personalizada" \
       4 "Perfil de servidor (energía y mantenimiento)" \
       5 "Configurar Samba + carpetas" \
-      6 "Restaurar desde disco antiguo" \
-      7 "Estado de servicios" \
-      8 "Diagnóstico (Health Check)" \
-      9 "Salir" \
+      6 "Backup de configuración" \
+      7 "Restaurar (backup o disco viejo)" \
+      8 "Estado de servicios" \
+      9 "Diagnóstico (Health Check)" \
+      10 "Salir" \
       3>&1 1>&2 2>&3) || exit 0
 
     case "$CHOICE" in
@@ -64,10 +65,11 @@ main_menu() {
       3) install_custom ;;
       4) server_profile ;;
       5) run_module storage; run_module samba ;;
-      6) run_module restore ;;
-      7) run_module status ;;
-      8) run_module healthcheck ;;
-      9) clear; exit 0 ;;
+      6) run_module backup ;;
+      7) run_module restore ;;
+      8) run_module status ;;
+      9) run_module healthcheck ;;
+      10) clear; exit 0 ;;
     esac
   done
 }
