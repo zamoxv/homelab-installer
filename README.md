@@ -62,7 +62,7 @@ Descubiertos automáticamente y ordenados por `HLI-ORDER`:
 |--------|-------------|:---:|
 | `update` | Actualizar el servidor (apt + limpieza) | — |
 | `base` | Paquetes base y utilidades | ✅ |
-| `storage` | Estructura `/srv` | ✅ |
+| `storage` | Estructura `/srv` + expansión de LVM | ✅ |
 | `power` | Gestión de energía (no suspender, ignorar tapa) | ✅ |
 | `wol` | Wake-on-LAN | ✅ |
 | `samba` | Samba + carpetas compartidas | ✅ |

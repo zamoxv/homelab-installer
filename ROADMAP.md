@@ -113,8 +113,9 @@ que el usuario pueda crear otros volúmenes (`/home`, `/var`, `/docker`...). En 
 homelab no queremos eso: queremos toda la capacidad en `/`. La última migración
 nos obligó a expandir el LVM a mano — esto no debería volver a pasar.
 
-- [ ] `storage.sh` detecta espacio libre en el VG (`vgs` → `VFree > 0`).
-- [ ] Si hay espacio, muestra VG, GB libres y ofrece expandir automáticamente:
+- [x] `storage.sh` detecta espacio libre en el VG (`vgs` → `VFree > 0`) y que la
+  raíz esté sobre LVM.
+- [x] Si hay espacio, muestra VG, GB libres y ofrece expandir automáticamente:
   `sudo lvextend -l +100%FREE -r <LV-de-raíz>` (`-r` redimensiona el filesystem
   en el mismo paso). Idempotente: si no hay `VFree`, no hace nada.
 - [ ] `healthcheck.sh` marca con ⚠ cuando hay espacio sin asignar en el VG y
