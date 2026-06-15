@@ -3,6 +3,7 @@
 # HLI-DESC: Ver estado de servicios
 # HLI-ORDER: 90
 # HLI-DEFAULT: no
+# HLI-TIPO: tool
 # HLI-TUI: yes
 set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"

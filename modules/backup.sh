@@ -3,6 +3,7 @@
 # HLI-DESC: Backup de configuración y estado
 # HLI-ORDER: 82
 # HLI-DEFAULT: no
+# HLI-TIPO: tool
 # HLI-TUI: yes
 set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"

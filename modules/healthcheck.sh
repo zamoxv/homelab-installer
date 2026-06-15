@@ -3,6 +3,7 @@
 # HLI-DESC: Diagnóstico del servidor (Health Check)
 # HLI-ORDER: 95
 # HLI-DEFAULT: no
+# HLI-TIPO: tool
 # HLI-TUI: yes
 set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"

@@ -60,16 +60,18 @@ backups_menu() {
       --backtitle "HomeLab Installer" \
       --title "Respaldos y migración" \
       --menu "Seleccione una opción:" \
-      16 78 6 \
+      17 78 7 \
       crear "Crear backup de configuración (.tar.gz)" \
       restaurar "Restaurar desde un backup (.tar.gz)" \
-      disco "Restaurar/migrar desde un disco viejo (automático)" \
+      config "Restaurar config desde un disco viejo (automático)" \
+      media "Transferir media desde un disco viejo (automático)" \
       volver "Volver al menú principal" \
       3>&1 1>&2 2>&3) || return
     { case "$opt" in
       crear) run_module backup ;;
       restaurar) run_module restore ;;
-      disco) run_module migrate ;;
+      config) run_module migrate ;;
+      media) run_module media-transfer ;;
       volver) return ;;
     esac; } || true
   done
@@ -136,6 +138,7 @@ run_module_gauge() {
 install_full() {
   local all=() m i=0 total
   for m in $(list_modules); do
+    [[ "$(module_meta "$m" TIPO)" == "tool" ]] && continue
     [[ "$(module_meta "$m" DEFAULT)" == "yes" ]] && all+=("$m")
   done
   total=${#all[@]}
@@ -158,6 +161,7 @@ install_full() {
 install_custom() {
   local args=() m desc state
   for m in $(list_modules); do
+    [[ "$(module_meta "$m" TIPO)" == "tool" ]] && continue
     desc="$(module_meta "$m" DESC)"
     [[ "$(module_meta "$m" DEFAULT)" == "yes" ]] && state="ON" || state="OFF"
     args+=("$m" "$desc" "$state")

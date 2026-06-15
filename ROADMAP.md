@@ -136,8 +136,9 @@ anterior en minutos.
 - [x] Montar la raíz del disco viejo (auto-detectada por `/etc`) y pasársela al
   helper de restauración sin que el usuario tipee la ruta.
 - [x] Al terminar: desmontar y desactivar el VG viejo de forma limpia (trap).
-- [ ] (Opcional) Ofrecer copiar también carpetas de media seleccionadas del
-  disco viejo, avisando tamaño y tiempo estimado.
+- [x] `media-transfer`: copiar carpetas de media seleccionadas del disco viejo
+  (muestra tamaño), accesible solo desde el menú Respaldos. Las "herramientas"
+  (`HLI-TIPO: tool`) ya no aparecen en la instalación completa ni personalizada.
 - [x] Guardas de seguridad: nunca tocar el disco del sistema; montaje en SOLO
   LECTURA; identificación por UUID; confirmación antes de renombrar VG o restaurar.
 

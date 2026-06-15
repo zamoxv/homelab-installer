@@ -3,6 +3,7 @@
 # HLI-DESC: Restaurar desde un backup (.tar.gz)
 # HLI-ORDER: 80
 # HLI-DEFAULT: no
+# HLI-TIPO: tool
 # HLI-TUI: yes
 set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"

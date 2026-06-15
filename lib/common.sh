@@ -220,3 +220,96 @@ restore_components_from_root() {
     sudo systemctl restart smbd 2>/dev/null || true
   fi
 }
+
+# --- Disco viejo: detección, LVM y montaje en SOLO LECTURA (compartido) ---
+# mount_old_disk deja la ruta raíz en OLD_DISK_MNT; el llamador limpia con
+# unmount_old_disk (y debería ponerlo en un trap EXIT).
+OLD_DISK_MNT=""
+OLD_DISK_VG=""
+
+# Disco físico que contiene la raíz (a EXCLUIR siempre).
+_system_disk() {
+  local src p1 p2
+  src="$(findmnt -no SOURCE / 2>/dev/null | sed 's/\[.*//')"
+  p1="$(lsblk -no PKNAME "$src" 2>/dev/null | head -n1 || true)"
+  [[ -z "$p1" ]] && p1="$(basename "$src")"
+  p2="$(lsblk -no PKNAME "/dev/$p1" 2>/dev/null | head -n1 || true)"
+  echo "${p2:-$p1}"
+}
+
+_vg_uuid_on_disk() {
+  sudo pvs --noheadings -o pv_name,vg_uuid 2>/dev/null \
+    | awk -v d="/dev/$1" '$1 ~ ("^" d) {print $2; exit}' || true
+}
+
+_vg_name_by_uuid() {
+  sudo vgs --noheadings -o vg_name,vg_uuid 2>/dev/null \
+    | awk -v u="$1" '$2 == u {print $1; exit}' || true
+}
+
+mount_old_disk() {
+  local sys_disk disk old_uuid old_name mnt lv part n info
+  local cand=() menu_args=()
+  sys_disk="$(_system_disk)"
+
+  mapfile -t cand < <(lsblk -dno NAME,TYPE 2>/dev/null | awk -v s="$sys_disk" '$2 == "disk" && $1 != s {print $1}')
+  if [[ ${#cand[@]} -eq 0 ]]; then
+    msg "No se detectó ningún disco aparte del sistema (/dev/$sys_disk).\n\nConectá el disco viejo por USB y reintentá."
+    return 1
+  fi
+
+  for n in "${cand[@]}"; do
+    info="$(lsblk -dno SIZE,MODEL "/dev/$n" 2>/dev/null | head -n1 | xargs || true)"
+    menu_args+=("$n" "${info:-disco}")
+  done
+
+  disk=$(dialog --clear --title "Disco viejo — detección" \
+    --menu "Disco del sistema (EXCLUIDO): /dev/$sys_disk\n\nElegí el disco viejo:" \
+    16 78 6 "${menu_args[@]}" 3>&1 1>&2 2>&3) || return 1
+
+  mnt="$(mktemp -d)"
+  OLD_DISK_MNT=""
+  OLD_DISK_VG=""
+
+  old_uuid=""
+  command -v pvs >/dev/null 2>&1 && old_uuid="$(_vg_uuid_on_disk "$disk")"
+
+  if [[ -n "$old_uuid" ]]; then
+    old_name="$(_vg_name_by_uuid "$old_uuid")"
+    if [[ "$old_name" != "oldvg" ]]; then
+      confirm "Disco viejo con LVM.\n\nVG: ${old_name:-desconocido} (UUID $old_uuid)\n\nSe renombrará a 'oldvg' por UUID para leerlo sin chocar con el VG del sistema. Solo cambia la metadata del disco viejo. ¿Continuar?" \
+        || { sudo rmdir "$mnt" 2>/dev/null || true; return 1; }
+      sudo vgrename "$old_uuid" oldvg
+    fi
+    OLD_DISK_VG="oldvg"
+    sudo vgchange -ay oldvg >/dev/null
+    for lv in $(sudo lvs --noheadings -o lv_path oldvg 2>/dev/null | tr -d ' ' || true); do
+      if sudo mount -o ro "$lv" "$mnt" 2>/dev/null; then
+        if [[ -e "$mnt/etc/os-release" || -d "$mnt/var/lib" ]]; then OLD_DISK_MNT="$mnt"; break; fi
+        sudo umount "$mnt" 2>/dev/null || true
+      fi
+    done
+  else
+    for part in $(lsblk -lno NAME "/dev/$disk" 2>/dev/null | tail -n +2 || true); do
+      if sudo mount -o ro "/dev/$part" "$mnt" 2>/dev/null; then
+        if [[ -e "$mnt/etc/os-release" || -d "$mnt/var/lib" ]]; then OLD_DISK_MNT="$mnt"; break; fi
+        sudo umount "$mnt" 2>/dev/null || true
+      fi
+    done
+  fi
+
+  if [[ -z "$OLD_DISK_MNT" ]]; then
+    msg "No pude encontrar el sistema de archivos raíz en /dev/$disk.\n\n¿Es el disco correcto?"
+    sudo rmdir "$mnt" 2>/dev/null || true
+    return 1
+  fi
+  return 0
+}
+
+unmount_old_disk() {
+  [[ -n "$OLD_DISK_MNT" ]] && mountpoint -q "$OLD_DISK_MNT" 2>/dev/null && sudo umount "$OLD_DISK_MNT" 2>/dev/null || true
+  [[ -n "$OLD_DISK_MNT" && -d "$OLD_DISK_MNT" ]] && sudo rmdir "$OLD_DISK_MNT" 2>/dev/null || true
+  [[ -n "$OLD_DISK_VG" ]] && sudo vgchange -an "$OLD_DISK_VG" 2>/dev/null || true
+  OLD_DISK_MNT=""
+  OLD_DISK_VG=""
+}

@@ -68,11 +68,16 @@ Descubiertos automáticamente y ordenados por `HLI-ORDER`:
 | `jellyfin` | Servidor multimedia Jellyfin | ✅ |
 | `qbittorrent` | qBittorrent-nox como servicio | ✅ |
 | `adguard` | AdGuard Home | ✅ |
-| `migrate` | Migración asistida (disco viejo automático) | — |
+| `migrate` | Restaurar config desde un disco viejo (automático) | — |
+| `media-transfer` | Transferir media desde un disco viejo (automático) | — |
 | `restore` | Restaurar desde un backup (.tar.gz) | — |
 | `backup` | Backup de configuración y estado | — |
 | `status` | Ver estado de servicios | — |
 | `healthcheck` | Diagnóstico del servidor | — |
+
+Los módulos con `—` son **herramientas** (`HLI-TIPO: tool`): no aparecen en la
+instalación completa ni en la personalizada; se usan desde su menú (Respaldos,
+Estado, Diagnóstico, Actualizar).
 
 ## Cómo agregar un módulo
 
@@ -84,6 +89,7 @@ Descubiertos automáticamente y ordenados por `HLI-ORDER`:
    # HLI-DESC: Lo que hace, breve
    # HLI-ORDER: 65
    # HLI-DEFAULT: yes      # entra en "instalación completa" y viene pre-marcado
+   # HLI-TIPO: install     # 'tool' = herramienta (no aparece en instalación)
    # HLI-TUI: no           # yes si usa dialog/prompts (hereda la terminal)
    set -euo pipefail
    source "$(dirname "$0")/../lib/common.sh"

@@ -3,6 +3,7 @@
 # HLI-DESC: Actualizar el servidor (apt + limpieza)
 # HLI-ORDER: 5
 # HLI-DEFAULT: no
+# HLI-TIPO: tool
 # HLI-TUI: no
 set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"
