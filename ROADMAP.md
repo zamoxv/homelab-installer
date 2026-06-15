@@ -75,9 +75,9 @@ porque todos dependen de él.
   targets, ignorar cierre de tapa vía drop-in en `logind.conf.d/`, detectar swap
   y ofrecer mantener hibernación. Auto-descubierto por el plugin system (order
   25), sin tocar menú ni config.
-- [ ] Perfil de servidor (`24/7` / `Escritorio` / `Notebook`) que en un solo
-  paso agrupa: nunca suspender, ignorar tapa, WOL, ajustar `journald`,
-  `fstrim.timer` si hay SSD, `smartd` si hay HDD.
+- [x] Perfil de servidor (`24/7` / `Escritorio` / `Notebook`) como acción de
+  menú. `24/7` reutiliza `power` + `wol` y aplica inline: límite de `journald`,
+  `fstrim.timer` si detecta SSD, `smartd` si detecta HDD (vía `lsblk ROTA`).
 
 ### v0.6 — Health Check
 

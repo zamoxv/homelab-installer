@@ -50,20 +50,22 @@ main_menu() {
       1 "Dashboard del servidor" \
       2 "Instalación completa recomendada" \
       3 "Instalación personalizada" \
-      4 "Configurar Samba + carpetas" \
-      5 "Restaurar desde disco antiguo" \
-      6 "Estado de servicios" \
-      7 "Salir" \
+      4 "Perfil de servidor (energía y mantenimiento)" \
+      5 "Configurar Samba + carpetas" \
+      6 "Restaurar desde disco antiguo" \
+      7 "Estado de servicios" \
+      8 "Salir" \
       3>&1 1>&2 2>&3) || exit 0
 
     case "$CHOICE" in
       1) show_dashboard ;;
       2) install_full ;;
       3) install_custom ;;
-      4) run_module storage; run_module samba ;;
-      5) run_module restore ;;
-      6) run_module status ;;
-      7) clear; exit 0 ;;
+      4) server_profile ;;
+      5) run_module storage; run_module samba ;;
+      6) run_module restore ;;
+      7) run_module status ;;
+      8) clear; exit 0 ;;
     esac
   done
 }
@@ -104,4 +106,57 @@ install_custom() {
     item="${item//\"/}"
     run_module "$item"
   done
+}
+
+# ¿Hay algún disco SSD / HDD presente? (ROTA=0 → SSD, 1 → HDD)
+has_ssd() { lsblk -dno ROTA 2>/dev/null | grep -q '^0$'; }
+has_hdd() { lsblk -dno ROTA 2>/dev/null | grep -q '^1$'; }
+
+# Limita el tamaño del journal en disco (drop-in idempotente).
+apply_journald_limit() {
+  sudo mkdir -p /etc/systemd/journald.conf.d
+  sudo tee /etc/systemd/journald.conf.d/homelab.conf > /dev/null <<'EOF'
+[Journal]
+SystemMaxUse=200M
+EOF
+  sudo systemctl restart systemd-journald
+}
+
+enable_fstrim() {
+  sudo systemctl enable --now fstrim.timer
+}
+
+enable_smartd() {
+  sudo apt install -y smartmontools
+  sudo systemctl enable --now smartmontools 2>/dev/null \
+    || sudo systemctl enable --now smartd 2>/dev/null \
+    || true
+}
+
+server_profile() {
+  local choice extras
+  choice=$(dialog --clear \
+    --backtitle "HomeLab Installer v0.2" \
+    --title "Perfil de servidor" \
+    --radiolist "Tipo de equipo (determina energía y mantenimiento):" \
+    14 76 3 \
+    24x7 "24/7 (servidor siempre encendido)" ON \
+    escritorio "Escritorio (permite suspensión)" OFF \
+    notebook "Notebook (conserva batería)" OFF \
+    3>&1 1>&2 2>&3) || return
+
+  case "$choice" in
+    24x7)
+      run_module power
+      run_module wol
+      apply_journald_limit
+      extras="journald (límite de logs)"
+      if has_ssd; then enable_fstrim; extras+="\nfstrim.timer (SSD detectado)"; fi
+      if has_hdd; then enable_smartd; extras+="\nsmartd (HDD detectado)"; fi
+      msg "Perfil 24/7 aplicado.\n\nEnergía: no suspender, ignorar tapa.\nWOL activado.\n$extras"
+      ;;
+    escritorio|notebook)
+      msg "Perfil '$choice' seleccionado.\n\nNo se fuerza el comportamiento de servidor: se permite la suspensión y no se activa WOL.\n\nSi antes aplicaste el perfil 24/7 y querés revertir la suspensión, desenmascarar los *.target manualmente."
+      ;;
+  esac
 }
