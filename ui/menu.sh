@@ -53,6 +53,28 @@ EOF
   dialog --title "Dashboard" --textbox /tmp/homelab-dashboard.txt 30 92
 }
 
+backups_menu() {
+  local opt
+  while true; do
+    opt=$(dialog --clear \
+      --backtitle "HomeLab Installer" \
+      --title "Respaldos y migración" \
+      --menu "Seleccione una opción:" \
+      16 78 6 \
+      crear "Crear backup de configuración (.tar.gz)" \
+      restaurar "Restaurar desde un backup (.tar.gz)" \
+      disco "Restaurar/migrar desde un disco viejo (automático)" \
+      volver "Volver al menú principal" \
+      3>&1 1>&2 2>&3) || return
+    { case "$opt" in
+      crear) run_module backup ;;
+      restaurar) run_module restore ;;
+      disco) run_module migrate ;;
+      volver) return ;;
+    esac; } || true
+  done
+}
+
 main_menu() {
   while true; do
     CHOICE=$(dialog --clear \
@@ -65,13 +87,11 @@ main_menu() {
       3 "Instalación personalizada" \
       4 "Perfil de servidor (energía y mantenimiento)" \
       5 "Configurar Samba + carpetas" \
-      6 "Backup de configuración" \
-      7 "Restaurar (backup o disco viejo)" \
-      8 "Migración asistida (disco viejo automático)" \
-      9 "Actualizar servidor" \
-      10 "Estado de servicios" \
-      11 "Diagnóstico (Health Check)" \
-      12 "Salir" \
+      6 "Respaldos y migración" \
+      7 "Actualizar servidor" \
+      8 "Estado de servicios" \
+      9 "Diagnóstico (Health Check)" \
+      10 "Salir" \
       3>&1 1>&2 2>&3) || exit 0
 
     # El brace + '|| true' evita que un Cancelar/No en un submenú (estado != 0)
@@ -82,13 +102,11 @@ main_menu() {
       3) install_custom ;;
       4) server_profile ;;
       5) run_module storage; run_module samba ;;
-      6) run_module backup ;;
-      7) run_module restore ;;
-      8) run_module migrate ;;
-      9) run_module update ;;
-      10) run_module status ;;
-      11) run_module healthcheck ;;
-      12) clear; exit 0 ;;
+      6) backups_menu ;;
+      7) run_module update ;;
+      8) run_module status ;;
+      9) run_module healthcheck ;;
+      10) clear; exit 0 ;;
     esac; } || true
   done
 }

@@ -47,13 +47,11 @@ la sesión para que los módulos en segundo plano no se cuelguen).
 | 3 | Instalación personalizada (salida de `apt` visible) |
 | 4 | Perfil de servidor (energía y mantenimiento) |
 | 5 | Configurar Samba + carpetas |
-| 6 | Backup de configuración |
-| 7 | Restaurar (backup HLI o disco viejo) |
-| 8 | Migración asistida (disco viejo automático) |
-| 9 | Actualizar servidor |
-| 10 | Estado de servicios |
-| 11 | Diagnóstico (Health Check) |
-| 12 | Salir |
+| 6 | Respaldos y migración (crear / restaurar `.tar.gz` / disco viejo) |
+| 7 | Actualizar servidor |
+| 8 | Estado de servicios |
+| 9 | Diagnóstico (Health Check) |
+| 10 | Salir |
 
 ## Módulos
 
@@ -71,7 +69,7 @@ Descubiertos automáticamente y ordenados por `HLI-ORDER`:
 | `qbittorrent` | qBittorrent-nox como servicio | ✅ |
 | `adguard` | AdGuard Home | ✅ |
 | `migrate` | Migración asistida (disco viejo automático) | — |
-| `restore` | Restaurar (backup HLI o disco viejo) | — |
+| `restore` | Restaurar desde un backup (.tar.gz) | — |
 | `backup` | Backup de configuración y estado | — |
 | `status` | Ver estado de servicios | — |
 | `healthcheck` | Diagnóstico del servidor | — |
