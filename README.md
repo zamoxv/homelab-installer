@@ -1,61 +1,120 @@
-# HomeLab Installer
+# HomeLab Installer (HLI)
 
-Instalador TUI para preparar un servidor doméstico Ubuntu Server.
+Instalador TUI (menú con `dialog`) para montar y mantener un servidor doméstico
+sobre Ubuntu Server.
 
-Servicios incluidos en v0.2:
+## Misión
 
-- Base Ubuntu
-- Wake-on-LAN
-- Estructura `/srv`
-- Samba
-- Jellyfin
-- qBittorrent-nox
-- AdGuard Home
-- Estado de servicios
-- Logs
-- Restore básico
+Que migrar el servidor completo a un equipo nuevo (Lenovo M70q, Dell OptiPlex,
+etc.) tome **menos de 30 minutos**. El HLI no es un script de conveniencia: es
+el seguro de migración del homelab. Cada problema real que aparece administrando
+el servidor se convierte en un módulo, para no volver a resolverlo a mano.
 
-JASJIC queda fuera porque ya tiene sus propios scripts.
+## Características
+
+- **Plugin System**: el menú se construye solo leyendo `modules/`. Agregar una
+  función nueva es tirar un archivo con su cabecera — sin tocar el resto.
+- **Perfil de servidor** (`24/7` / `Escritorio` / `Notebook`): energía y
+  mantenimiento en un paso (no suspender, ignorar tapa, WOL, journald, fstrim,
+  smartd según SSD/HDD).
+- **Backup y restore de migración**: empaqueta la configuración/estado (sin la
+  media) y restaura desde un backup HLI o desde un disco viejo montado.
+- **Health Check**: informe de discos (SMART), temperatura, RAM, espacio,
+  servicios, IP, DNS, puertos y uptime.
+- **Dashboard** con detección de hardware (modelo, CPU, RAM, disco, distro).
+- **Barra de progreso** en la instalación completa, con `apt` no-interactivo.
 
 ## Uso rápido
 
 ```bash
 sudo apt update
 sudo apt install -y git dialog
-git clone https://github.com/zamoxv/homelab-installer.git
+git clone <URL-del-repo> homelab-installer
 cd homelab-installer
-chmod +x bootstrap.sh
-./bootstrap.sh
-```
-
-## Uso sin GitHub
-
-```bash
-unzip homelab-installer-v0.2.zip
-cd homelab-installer-v0.2
 chmod +x bootstrap.sh modules/*.sh ui/*.sh lib/*.sh
 ./bootstrap.sh
 ```
 
-## Accesos
+Al arrancar pide la contraseña de `sudo` una vez (la mantiene viva durante toda
+la sesión para que los módulos en segundo plano no se cuelguen).
 
-- Jellyfin: `http://IP_SERVIDOR:8096`
-- qBittorrent: `http://IP_SERVIDOR:8080`
-- AdGuard Home: `http://IP_SERVIDOR:3000`
-- Samba: `smb://IP_SERVIDOR/peliculas`
+## Menú principal
 
-## Carpetas
+| # | Opción |
+|---|--------|
+| 1 | Dashboard del servidor |
+| 2 | Instalación completa recomendada (con barra de progreso) |
+| 3 | Instalación personalizada (salida de `apt` visible) |
+| 4 | Perfil de servidor (energía y mantenimiento) |
+| 5 | Configurar Samba + carpetas |
+| 6 | Backup de configuración |
+| 7 | Restaurar (backup HLI o disco viejo) |
+| 8 | Actualizar servidor |
+| 9 | Estado de servicios |
+| 10 | Diagnóstico (Health Check) |
+| 11 | Salir |
+
+## Módulos
+
+Descubiertos automáticamente y ordenados por `HLI-ORDER`:
+
+| Módulo | Descripción | En "completa" |
+|--------|-------------|:---:|
+| `update` | Actualizar el servidor (apt + limpieza) | — |
+| `base` | Paquetes base y utilidades | ✅ |
+| `storage` | Estructura `/srv` | ✅ |
+| `power` | Gestión de energía (no suspender, ignorar tapa) | ✅ |
+| `wol` | Wake-on-LAN | ✅ |
+| `samba` | Samba + carpetas compartidas | ✅ |
+| `jellyfin` | Servidor multimedia Jellyfin | ✅ |
+| `qbittorrent` | qBittorrent-nox como servicio | ✅ |
+| `adguard` | AdGuard Home | ✅ |
+| `restore` | Restaurar (backup HLI o disco viejo) | — |
+| `backup` | Backup de configuración y estado | — |
+| `status` | Ver estado de servicios | — |
+| `healthcheck` | Diagnóstico del servidor | — |
+
+## Cómo agregar un módulo
+
+1. Creá `modules/mimodulo.sh` con la cabecera de metadata:
+
+   ```bash
+   #!/usr/bin/env bash
+   # HLI-MODULE: mimodulo
+   # HLI-DESC: Lo que hace, breve
+   # HLI-ORDER: 65
+   # HLI-DEFAULT: yes      # entra en "instalación completa" y viene pre-marcado
+   # HLI-TUI: no           # yes si usa dialog/prompts (hereda la terminal)
+   set -euo pipefail
+   source "$(dirname "$0")/../lib/common.sh"
+
+   # ... tu lógica idempotente ...
+
+   mark_done mimodulo
+   ```
+
+2. `chmod +x modules/mimodulo.sh`.
+3. Listo: aparece solo en el menú y en la instalación. No se toca nada más.
+
+## Estructura
 
 ```text
-/srv/media/peliculas
-/srv/media/series
-/srv/media/musica
-/srv/media/libros
-/srv/media/fotos
-/srv/media/videos
-/srv/media/downloads
-/srv/media/transcode
-/srv/backups
-/srv/config
-/srv/restore
+bootstrap.sh        # punto de entrada
+lib/common.sh       # helpers, plugin system, detección de hardware
+ui/menu.sh          # menú, dashboard, perfil, instalación
+modules/*.sh        # un archivo por capacidad (auto-descubiertos)
+config/default.conf # rutas y valores por defecto
+ROADMAP.md          # plan por fases
 ```
+
+## Carpetas creadas
+
+```text
+/srv/media/{peliculas,series,musica,libros,fotos,videos,downloads,transcode}
+/srv/backups   /srv/config   /srv/restore
+```
+
+## Roadmap
+
+El plan por fases está en [ROADMAP.md](ROADMAP.md). Es un proyecto vivo: cada
+servidor que montamos lo mejora un poco más.

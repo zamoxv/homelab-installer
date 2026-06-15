@@ -105,6 +105,21 @@ porque todos dependen de él.
 - [x] apt no-interactivo (confdef/confold + needrestart auto) y `sudo` con
   keep-alive: instalaciones en segundo plano sin prompts que cuelguen.
 
+### v0.9 — Storage inteligente: auto-expandir LVM
+
+**Problema (visto en la práctica):** el instalador de Ubuntu Server crea un
+volumen lógico de ~100 GB y **deja el resto del Volume Group sin asignar**, para
+que el usuario pueda crear otros volúmenes (`/home`, `/var`, `/docker`...). En un
+homelab no queremos eso: queremos toda la capacidad en `/`. La última migración
+nos obligó a expandir el LVM a mano — esto no debería volver a pasar.
+
+- [ ] `storage.sh` detecta espacio libre en el VG (`vgs` → `VFree > 0`).
+- [ ] Si hay espacio, muestra VG, GB libres y ofrece expandir automáticamente:
+  `sudo lvextend -l +100%FREE -r <LV-de-raíz>` (`-r` redimensiona el filesystem
+  en el mismo paso). Idempotente: si no hay `VFree`, no hace nada.
+- [ ] `healthcheck.sh` marca con ⚠ cuando hay espacio sin asignar en el VG y
+  ofrece "reparar" (correr la expansión) desde el propio informe.
+
 ### v1.0 — Release
 
 - [ ] README completo, `CHANGELOG.md`, `docs/`.
