@@ -150,13 +150,13 @@ Montar de forma persistente un disco de datos (USB con fuente, o segundo SATA en
 el Ultrabay) para la media, sin comandos a mano. En el T400 el USB 2.0 sobra
 para streaming; el Ultrabay (SATA interno) es la opción más confiable para 24/7.
 
-- [ ] `datadisk.sh`: detectar un disco/partición de datos (excluyendo el del
-  sistema), ofrecer usar uno existente o formatear (con confirmación,
-  destructivo), y montarlo en `MEDIA_ROOT`.
-- [ ] Entrada en `/etc/fstab` **por UUID** (no `/dev/sdX`, que puede cambiar) y
-  con `nofail` (el server arranca aunque el disco no esté presente).
-- [ ] Guardas: nunca tocar el disco del sistema; confirmar siempre antes de
-  formatear.
+- [x] `datadisk.sh`: detecta disco/partición de datos (excluyendo el del
+  sistema), ofrece usar el existente o formatear (con doble confirmación,
+  destructivo), y lo monta en el punto elegido (por defecto `MEDIA_ROOT`).
+- [x] Entrada en `/etc/fstab` **por UUID** (no `/dev/sdX`, que puede cambiar) y
+  con `nofail` (el server arranca aunque el disco no esté presente). Idempotente.
+- [x] Guardas: nunca toca el disco del sistema; doble confirmación antes de
+  formatear; avisa si el punto de montaje ya tiene datos (quedarían ocultos).
 
 ### v1.0 — Release
 

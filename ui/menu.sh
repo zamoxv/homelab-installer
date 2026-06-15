@@ -89,11 +89,12 @@ main_menu() {
       3 "Instalación personalizada" \
       4 "Perfil de servidor (energía y mantenimiento)" \
       5 "Configurar Samba + carpetas" \
-      6 "Respaldos y migración" \
-      7 "Actualizar servidor" \
-      8 "Estado de servicios" \
-      9 "Diagnóstico (Health Check)" \
-      10 "Salir" \
+      6 "Configurar disco de datos" \
+      7 "Respaldos y migración" \
+      8 "Actualizar servidor" \
+      9 "Estado de servicios" \
+      10 "Diagnóstico (Health Check)" \
+      11 "Salir" \
       3>&1 1>&2 2>&3) || exit 0
 
     # El brace + '|| true' evita que un Cancelar/No en un submenú (estado != 0)
@@ -104,11 +105,12 @@ main_menu() {
       3) install_custom ;;
       4) server_profile ;;
       5) run_module storage; run_module samba ;;
-      6) backups_menu ;;
-      7) run_module update ;;
-      8) run_module status ;;
-      9) run_module healthcheck ;;
-      10) clear; exit 0 ;;
+      6) run_module datadisk ;;
+      7) backups_menu ;;
+      8) run_module update ;;
+      9) run_module status ;;
+      10) run_module healthcheck ;;
+      11) clear; exit 0 ;;
     esac; } || true
   done
 }

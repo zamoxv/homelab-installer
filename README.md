@@ -47,11 +47,12 @@ la sesión para que los módulos en segundo plano no se cuelguen).
 | 3 | Instalación personalizada (salida de `apt` visible) |
 | 4 | Perfil de servidor (energía y mantenimiento) |
 | 5 | Configurar Samba + carpetas |
-| 6 | Respaldos y migración (crear / restaurar `.tar.gz` / disco viejo) |
-| 7 | Actualizar servidor |
-| 8 | Estado de servicios |
-| 9 | Diagnóstico (Health Check) |
-| 10 | Salir |
+| 6 | Configurar disco de datos (montaje permanente por UUID) |
+| 7 | Respaldos y migración (crear / restaurar `.tar.gz` / disco viejo) |
+| 8 | Actualizar servidor |
+| 9 | Estado de servicios |
+| 10 | Diagnóstico (Health Check) |
+| 11 | Salir |
 
 ## Módulos
 
@@ -62,6 +63,7 @@ Descubiertos automáticamente y ordenados por `HLI-ORDER`:
 | `update` | Actualizar el servidor (apt + limpieza) | — |
 | `base` | Paquetes base y utilidades | ✅ |
 | `storage` | Estructura `/srv` + expansión de LVM | ✅ |
+| `datadisk` | Configurar disco de datos permanente | — |
 | `power` | Gestión de energía (no suspender, ignorar tapa) | ✅ |
 | `wol` | Wake-on-LAN | ✅ |
 | `samba` | Samba + carpetas compartidas | ✅ |
