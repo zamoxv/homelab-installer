@@ -19,9 +19,9 @@ en un módulo o una mejora del HLI.
 - **Logs por módulo** en `/var/log/homelab-installer/`.
 - **Estado persistente** en `/var/lib/homelab-installer/state`.
 
-## Estado actual — v0.2 (hecho)
+## Punto de partida — v0.2
 
-Punto de partida del repositorio. Ya construido en la base actual:
+Base de la que partió el repositorio:
 
 - Base Ubuntu y utilidades
 - Dashboard de servicios
