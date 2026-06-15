@@ -51,7 +51,18 @@ if [[ "$action" == "formatear" ]]; then
   sudo mkfs.ext4 -F "$DEV"
 fi
 
-MP=$(input_box "Disco de datos" "Punto de montaje:" "$MEDIA_ROOT") || exit 0
+# Punto de montaje por defecto inteligente: si MEDIA_ROOT ya está ocupado
+# (montado o con datos), sugerir el primer /srv/mediaN libre (media2, media3...).
+default_mp="$MEDIA_ROOT"
+if mountpoint -q "$MEDIA_ROOT" 2>/dev/null || [[ -n "$(ls -A "$MEDIA_ROOT" 2>/dev/null)" ]]; then
+  n=2
+  while mountpoint -q "${MEDIA_ROOT}${n}" 2>/dev/null || [[ -n "$(ls -A "${MEDIA_ROOT}${n}" 2>/dev/null)" ]]; do
+    n=$((n + 1))
+  done
+  default_mp="${MEDIA_ROOT}${n}"
+fi
+
+MP=$(input_box "Disco de datos" "Punto de montaje:" "$default_mp") || exit 0
 
 if [[ -d "$MP" && -n "$(ls -A "$MP" 2>/dev/null)" ]]; then
   confirm "OJO: $MP ya tiene contenido.\n\nAl montar el disco ahí, ese contenido queda OCULTO (no se borra, pero no se ve hasta desmontar el disco).\n\n¿Continuar igual?" || exit 0
