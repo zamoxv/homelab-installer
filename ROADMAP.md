@@ -71,9 +71,10 @@ porque todos dependen de él.
 
 ### v0.5 — Power Management + Perfiles de servidor
 
-- [ ] `modules/power.sh`: desactivar suspensión/hibernación/hybrid-sleep,
-  ignorar cierre de tapa en `logind.conf`, verificar swap/hibernación, revisar
-  timers de suspensión.
+- [x] `modules/power.sh`: enmascarar `sleep/suspend/hibernate/hybrid-sleep`
+  targets, ignorar cierre de tapa vía drop-in en `logind.conf.d/`, detectar swap
+  y ofrecer mantener hibernación. Auto-descubierto por el plugin system (order
+  25), sin tocar menú ni config.
 - [ ] Perfil de servidor (`24/7` / `Escritorio` / `Notebook`) que en un solo
   paso agrupa: nunca suspender, ignorar tapa, WOL, ajustar `journald`,
   `fstrim.timer` si hay SSD, `smartd` si hay HDD.
