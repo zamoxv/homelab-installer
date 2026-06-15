@@ -7,7 +7,7 @@
 set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"
 
-if ! systemctl list-unit-files | grep -q '^AdGuardHome'; then
+if ! systemctl cat AdGuardHome >/dev/null 2>&1; then
   curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/scripts/install.sh | sudo sh -s -- -v
 fi
 

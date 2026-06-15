@@ -158,8 +158,8 @@ install_custom() {
 }
 
 # ¿Hay algún disco SSD / HDD presente? (ROTA=0 → SSD, 1 → HDD)
-has_ssd() { lsblk -dno ROTA 2>/dev/null | grep -q '^0$'; }
-has_hdd() { lsblk -dno ROTA 2>/dev/null | grep -q '^1$'; }
+has_ssd() { grep -qx 0 <<<"$(lsblk -dno ROTA 2>/dev/null)"; }
+has_hdd() { grep -qx 1 <<<"$(lsblk -dno ROTA 2>/dev/null)"; }
 
 # Limita el tamaño del journal en disco (drop-in idempotente).
 apply_journald_limit() {
