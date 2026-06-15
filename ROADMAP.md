@@ -81,8 +81,9 @@ porque todos dependen de él.
 
 ### v0.6 — Health Check
 
-- [ ] `modules/healthcheck.sh`: informe de SMART de discos, temperatura, RAM,
-  espacio libre, estado de servicios, IP, DNS, puertos abiertos y uptime.
+- [x] `modules/healthcheck.sh`: informe best-effort de SMART de discos,
+  temperatura, RAM, espacio libre, estado de servicios, IP, DNS, puertos
+  abiertos y uptime. Drop-in (order 95) + entrada propia en el menú principal.
 
 ### v0.7 — Backup y Restore de migración
 

@@ -54,7 +54,8 @@ main_menu() {
       5 "Configurar Samba + carpetas" \
       6 "Restaurar desde disco antiguo" \
       7 "Estado de servicios" \
-      8 "Salir" \
+      8 "Diagnóstico (Health Check)" \
+      9 "Salir" \
       3>&1 1>&2 2>&3) || exit 0
 
     case "$CHOICE" in
@@ -65,7 +66,8 @@ main_menu() {
       5) run_module storage; run_module samba ;;
       6) run_module restore ;;
       7) run_module status ;;
-      8) clear; exit 0 ;;
+      8) run_module healthcheck ;;
+      9) clear; exit 0 ;;
     esac
   done
 }
