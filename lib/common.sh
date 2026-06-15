@@ -219,6 +219,25 @@ restore_components_from_root() {
     sudo cp "$root/etc/samba/smb.conf" /etc/samba/smb.conf
     sudo systemctl restart smbd 2>/dev/null || true
   fi
+
+  # Claves SSH autorizadas: para no volver a correr ssh-copy-id tras migrar.
+  if sudo test -f "$root/home/$SERVER_USER/.ssh/authorized_keys"; then
+    import_authorized_keys "$root/home/$SERVER_USER/.ssh/authorized_keys"
+  fi
+}
+
+# Fusiona las claves públicas del archivo $1 al authorized_keys del usuario, sin
+# perder las que ya estaban (las deduplica). Solo claves públicas.
+import_authorized_keys() {
+  local src="$1" home
+  home="$(getent passwd "$SERVER_USER" | cut -d: -f6)"
+  home="${home:-/home/$SERVER_USER}"
+  mkdir -p "$home/.ssh"
+  chmod 700 "$home/.ssh"
+  { sudo cat "$src" 2>/dev/null; cat "$home/.ssh/authorized_keys" 2>/dev/null; } \
+    | sort -u > "$home/.ssh/authorized_keys.new"
+  mv "$home/.ssh/authorized_keys.new" "$home/.ssh/authorized_keys"
+  chmod 600 "$home/.ssh/authorized_keys"
 }
 
 # --- Disco viejo: detección, LVM y montaje en SOLO LECTURA (compartido) ---

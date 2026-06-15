@@ -47,5 +47,8 @@ if [[ -f "$work/samba/smb.conf" ]]; then
   sudo systemctl restart smbd 2>/dev/null || true
 fi
 
+# Claves SSH autorizadas
+[[ -f "$work/ssh/authorized_keys" ]] && import_authorized_keys "$work/ssh/authorized_keys"
+
 msg "Restauración desde backup finalizada."
 mark_done restore

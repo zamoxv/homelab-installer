@@ -139,8 +139,24 @@ anterior en minutos.
 - [x] `media-transfer`: copiar carpetas de media seleccionadas del disco viejo
   (muestra tamaño), accesible solo desde el menú Respaldos. Las "herramientas"
   (`HLI-TIPO: tool`) ya no aparecen en la instalación completa ni personalizada.
+- [x] Importar `authorized_keys` al migrar/restaurar y en el backup — para no
+  volver a correr `ssh-copy-id` tras una reinstalación (solo claves públicas).
 - [x] Guardas de seguridad: nunca tocar el disco del sistema; montaje en SOLO
   LECTURA; identificación por UUID; confirmación antes de renombrar VG o restaurar.
+
+### v0.11 — Disco de datos permanente (datadisk)
+
+Montar de forma persistente un disco de datos (USB con fuente, o segundo SATA en
+el Ultrabay) para la media, sin comandos a mano. En el T400 el USB 2.0 sobra
+para streaming; el Ultrabay (SATA interno) es la opción más confiable para 24/7.
+
+- [ ] `datadisk.sh`: detectar un disco/partición de datos (excluyendo el del
+  sistema), ofrecer usar uno existente o formatear (con confirmación,
+  destructivo), y montarlo en `MEDIA_ROOT`.
+- [ ] Entrada en `/etc/fstab` **por UUID** (no `/dev/sdX`, que puede cambiar) y
+  con `nofail` (el server arranca aunque el disco no esté presente).
+- [ ] Guardas: nunca tocar el disco del sistema; confirmar siempre antes de
+  formatear.
 
 ### v1.0 — Release
 

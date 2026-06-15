@@ -12,7 +12,7 @@ trap unmount_old_disk EXIT
 
 mount_old_disk || exit 0
 
-confirm "Disco viejo montado en SOLO LECTURA:\n$OLD_DISK_MNT\n\nSe restaurará la config de Jellyfin, qBittorrent y Samba (la media NO).\n\n¿Continuar?" || exit 0
+confirm "Disco viejo montado en SOLO LECTURA:\n$OLD_DISK_MNT\n\nSe restaurará la config de Jellyfin, qBittorrent, Samba y las claves SSH autorizadas (la media NO).\n\n¿Continuar?" || exit 0
 
 restore_components_from_root "$OLD_DISK_MNT"
 

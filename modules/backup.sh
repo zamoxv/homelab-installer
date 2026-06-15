@@ -14,7 +14,7 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 sudo mkdir -p "$BACKUP_ROOT"
-mkdir -p "$WORK/jellyfin" "$WORK/qbittorrent" "$WORK/samba" "$WORK/hli"
+mkdir -p "$WORK/jellyfin" "$WORK/qbittorrent" "$WORK/samba" "$WORK/hli" "$WORK/ssh"
 
 # Jellyfin: config y metadata (NO media)
 [[ -d /var/lib/jellyfin ]] && sudo rsync -aHAX /var/lib/jellyfin/ "$WORK/jellyfin/lib/" 2>/dev/null || true
@@ -31,6 +31,9 @@ qb_home="${qb_home:-/home/$SERVER_USER}"
 
 # Config del HLI
 [[ -f "$CONFIG_FILE" ]] && cp "$CONFIG_FILE" "$WORK/hli/default.conf"
+
+# Claves SSH autorizadas (públicas)
+[[ -f "$qb_home/.ssh/authorized_keys" ]] && cp "$qb_home/.ssh/authorized_keys" "$WORK/ssh/authorized_keys" 2>/dev/null || true
 
 # Manifiesto
 cat > "$WORK/config.yml" <<EOF
@@ -49,7 +52,7 @@ EOF
 
 # Empaquetar (el contenido se trajo con sudo: normalizar dueño antes de tar)
 sudo chown -R "$USER:$USER" "$WORK"
-tar -czf "$WORK/archive.tar.gz" -C "$WORK" jellyfin qbittorrent samba hli config.yml
+tar -czf "$WORK/archive.tar.gz" -C "$WORK" jellyfin qbittorrent samba hli ssh config.yml
 sudo mv "$WORK/archive.tar.gz" "$ARCHIVE"
 sudo chown "$SERVER_USER:$MEDIA_GROUP" "$ARCHIVE" 2>/dev/null || true
 
