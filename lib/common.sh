@@ -181,7 +181,9 @@ detect_iface() {
 
 service_state() {
   local service="$1"
-  if systemctl list-unit-files | grep -q "^$service"; then
+  # 'systemctl cat' no usa tubería: evita el bug de grep -q cerrando el pipe y
+  # disparando SIGPIPE en systemctl, que con 'pipefail' daba falso not-installed.
+  if systemctl cat "$service" >/dev/null 2>&1; then
     systemctl is-active "$service" 2>/dev/null || true
   else
     echo "not-installed"
