@@ -67,7 +67,6 @@ run_module() {
 
   log "Iniciando módulo: $module"
   bash "$path" 2>&1 | sudo tee -a "$LOG_DIR/$module.log"
-  mark_done "$module"
   log "Finalizado módulo: $module"
 }
 

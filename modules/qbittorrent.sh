@@ -15,9 +15,9 @@ After=network.target
 
 [Service]
 User=$SERVER_USER
-Group=$SERVER_USER
+Group=$MEDIA_GROUP
 Type=simple
-ExecStart=/usr/bin/qbittorrent-nox
+ExecStart=/usr/bin/qbittorrent-nox --confirm-legal-notice
 Restart=on-failure
 
 [Install]

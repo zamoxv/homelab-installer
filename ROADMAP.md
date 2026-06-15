@@ -48,11 +48,11 @@ Cada fase es **un commit + un push** a GitHub.
 Fixes de bugs reales detectados en la base actual, independientes de la
 arquitectura:
 
-- [ ] `qbittorrent-nox` sin `--confirm-legal-notice`: el servicio no arranca en
+- [x] `qbittorrent-nox` sin `--confirm-legal-notice`: el servicio no arranca en
   el primer boot.
-- [ ] `qbittorrent.service` usa `Group=$SERVER_USER` en vez de `$MEDIA_GROUP`:
+- [x] `qbittorrent.service` usa `Group=$SERVER_USER` en vez de `$MEDIA_GROUP`:
   inconsistencia de permisos con Jellyfin/Samba.
-- [ ] `mark_done` se invoca duplicado (en cada módulo y en `run_module`).
+- [x] `mark_done` se invoca duplicado (en cada módulo y en `run_module`).
 
 ### v0.4 — Núcleo: Plugin System (la columna vertebral)
 
