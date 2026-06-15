@@ -41,8 +41,11 @@ sel=$(dialog --clear --title "Transferir media" \
 
 confirm "Se copiarán las carpetas seleccionadas a $MEDIA_ROOT.\n\nPuede tardar MUCHO (cientos de GB, según el disco). ¿Continuar?" || exit 0
 
+clear
 for folder in $sel; do
   folder="${folder//\"/}"
+  echo
+  echo "==> Copiando: $folder"
   sudo mkdir -p "$MEDIA_ROOT/$folder"
   sudo rsync -aH --info=progress2 "$src_root/$folder/" "$MEDIA_ROOT/$folder/"
   sudo chown -R "$SERVER_USER:$MEDIA_GROUP" "$MEDIA_ROOT/$folder"
