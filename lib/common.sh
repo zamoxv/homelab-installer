@@ -273,7 +273,7 @@ mount_old_disk() {
 
   mapfile -t cand < <(lsblk -dno NAME,TYPE 2>/dev/null | awk -v s="$sys_disk" '$2 == "disk" && $1 != s {print $1}')
   if [[ ${#cand[@]} -eq 0 ]]; then
-    msg "No se detectó ningún disco aparte del sistema (/dev/$sys_disk).\n\nConectá el disco viejo por USB y reintentá."
+    msg "No se detectó ningún disco aparte del sistema (/dev/$sys_disk).\n\nConecte el disco viejo por USB e intente de nuevo."
     return 1
   fi
 
@@ -283,7 +283,7 @@ mount_old_disk() {
   done
 
   disk=$(dialog --clear --title "Disco viejo — detección" \
-    --menu "Disco del sistema (EXCLUIDO): /dev/$sys_disk\n\nElegí el disco viejo:" \
+    --menu "Disco del sistema (EXCLUIDO): /dev/$sys_disk\n\nSeleccione el disco viejo:" \
     16 78 6 "${menu_args[@]}" 3>&1 1>&2 2>&3) || return 1
 
   mnt="$(mktemp -d)"

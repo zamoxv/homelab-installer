@@ -160,6 +160,8 @@ para streaming; el Ultrabay (SATA interno) es la opción más confiable para 24/
 
 ### v1.0 — Release
 
-- [ ] README completo, `CHANGELOG.md`, `docs/`.
-- [ ] Prueba de migración end-to-end en menos de 30 minutos.
-- [ ] Etiqueta `v1.0`.
+- [x] README y `CHANGELOG.md` completos (el README hace de documentación).
+- [x] Español latinoamericano neutro en toda la interfaz y la documentación.
+- [x] Validado en hardware real (ThinkPad T400, Ubuntu 26.04): instalación,
+  perfil 24/7, Samba, servicios, WOL, expansión de LVM y transferencia de media.
+- [x] Etiqueta `v1.0.0`.

@@ -15,7 +15,7 @@ mapfile -t lines < <(lsblk -rpno NAME,TYPE,SIZE 2>/dev/null | awk -v sd="/dev/$s
   ($2 == "part" || $2 == "disk") && index($1, sd) != 1 { print $1 "\t" $3 }')
 
 if [[ ${#lines[@]} -eq 0 ]]; then
-  msg "No se detectó ningún disco/partición aparte del sistema (/dev/$sys_disk).\n\nConectá el disco y reintentá."
+  msg "No se detectó ningún disco/partición aparte del sistema (/dev/$sys_disk).\n\nConecte el disco e intente de nuevo."
   exit 0
 fi
 
@@ -28,7 +28,7 @@ for l in "${lines[@]}"; do
 done
 
 DEV=$(dialog --clear --title "Disco de datos" \
-  --menu "Disco del sistema (EXCLUIDO): /dev/$sys_disk\n\nElegí la partición/disco para los datos:" \
+  --menu "Disco del sistema (EXCLUIDO): /dev/$sys_disk\n\nSeleccione la partición/disco para los datos:" \
   18 78 8 "${menu_args[@]}" 3>&1 1>&2 2>&3) || exit 0
 
 fstype="$(lsblk -rpno FSTYPE "$DEV" 2>/dev/null | head -n1)"

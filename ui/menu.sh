@@ -231,7 +231,7 @@ server_profile() {
       msg "Perfil 24/7 aplicado.\n\nEnergía: no suspender, ignorar tapa.\nWOL activado.\n$extras"
       ;;
     escritorio|notebook)
-      msg "Perfil '$choice' seleccionado.\n\nNo se fuerza el comportamiento de servidor: se permite la suspensión y no se activa WOL.\n\nSi antes aplicaste el perfil 24/7 y querés revertir la suspensión, desenmascarar los *.target manualmente."
+      msg "Perfil '$choice' seleccionado.\n\nNo se fuerza el comportamiento de servidor: se permite la suspensión y no se activa WOL.\n\nSi antes aplicó el perfil 24/7 y desea revertir la suspensión, desenmascare los *.target manualmente."
       ;;
   esac
 }
