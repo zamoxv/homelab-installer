@@ -10,7 +10,7 @@ source "$(dirname "$0")/../lib/common.sh"
 sudo apt install -y samba
 
 FOLDERS=$(dialog --clear \
-  --backtitle "HomeLab Installer v0.2" \
+  --backtitle "HomeLab Installer" \
   --title "Carpetas SMB" \
   --checklist "Seleccione carpetas a compartir:" \
   22 82 12 \

@@ -80,7 +80,7 @@ backups_menu() {
 main_menu() {
   while true; do
     CHOICE=$(dialog --clear \
-      --backtitle "HomeLab Installer v0.2" \
+      --backtitle "HomeLab Installer" \
       --title "Menú principal" \
       --menu "Seleccione una opción:" \
       22 80 12 \
@@ -170,7 +170,7 @@ install_custom() {
   done
 
   SERVICES=$(dialog --clear \
-    --backtitle "HomeLab Installer v0.2" \
+    --backtitle "HomeLab Installer" \
     --title "Instalación personalizada" \
     --checklist "Seleccione módulos:" \
     22 82 12 \
@@ -211,7 +211,7 @@ enable_smartd() {
 server_profile() {
   local choice extras
   choice=$(dialog --clear \
-    --backtitle "HomeLab Installer v0.2" \
+    --backtitle "HomeLab Installer" \
     --title "Perfil de servidor" \
     --radiolist "Tipo de equipo (determina energía y mantenimiento):" \
     14 76 3 \
