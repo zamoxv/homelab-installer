@@ -11,7 +11,7 @@ export DEBIAN_FRONTEND=noninteractive
 sudo -v
 ( while true; do sudo -n true 2>/dev/null || exit; sleep 60; kill -0 "$$" 2>/dev/null || exit; done ) &
 SUDO_KEEPALIVE_PID=$!
-trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true' EXIT
+trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true; tput sgr0 2>/dev/null; clear 2>/dev/null' EXIT
 
 if ! command -v dialog >/dev/null 2>&1; then
   echo "Instalando dialog..."

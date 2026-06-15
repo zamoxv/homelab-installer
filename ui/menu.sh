@@ -74,7 +74,9 @@ main_menu() {
       12 "Salir" \
       3>&1 1>&2 2>&3) || exit 0
 
-    case "$CHOICE" in
+    # El brace + '|| true' evita que un Cancelar/No en un submenú (estado != 0)
+    # mate el bucle del menú por culpa de 'set -e'.
+    { case "$CHOICE" in
       1) show_dashboard ;;
       2) install_full ;;
       3) install_custom ;;
@@ -87,7 +89,7 @@ main_menu() {
       10) run_module status ;;
       11) run_module healthcheck ;;
       12) clear; exit 0 ;;
-    esac
+    esac; } || true
   done
 }
 
