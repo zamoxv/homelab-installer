@@ -8,7 +8,23 @@ set -euo pipefail
 source "$(dirname "$0")/../lib/common.sh"
 
 if ! command -v jellyfin >/dev/null 2>&1; then
-  curl https://repo.jellyfin.org/install-debuntu.sh | sudo bash
+  # Instalación no-interactiva vía repo APT oficial. El script install-debuntu.sh
+  # pide un Enter que cuelga cuando el módulo corre en segundo plano.
+  sudo apt install -y curl gnupg
+  sudo mkdir -p /etc/apt/keyrings
+  curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key \
+    | sudo gpg --dearmor --yes -o /etc/apt/keyrings/jellyfin.gpg
+  . /etc/os-release
+  sudo tee /etc/apt/sources.list.d/jellyfin.sources >/dev/null <<EOF
+Types: deb
+URIs: https://repo.jellyfin.org/${ID}
+Suites: ${VERSION_CODENAME}
+Components: main
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/jellyfin.gpg
+EOF
+  sudo apt update
+  sudo apt install -y jellyfin
 fi
 
 sudo mkdir -p "$MEDIA_ROOT/transcode"
