@@ -37,7 +37,7 @@ if [[ -z "$fstype" ]]; then
   action="formatear"
 else
   action=$(dialog --clear --title "Disco de datos" \
-    --menu "$DEV ya tiene un sistema de archivos ($fstype).\n\n¿Qué hacés?" \
+    --menu "$DEV ya tiene un sistema de archivos ($fstype).\n\n¿Qué desea hacer?" \
     14 70 3 \
     usar "Usar el contenido existente (no borra)" \
     formatear "Formatear en ext4 (BORRA TODO)" \

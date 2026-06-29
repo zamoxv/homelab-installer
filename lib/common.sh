@@ -141,12 +141,11 @@ hw_ram() {
 }
 
 hw_disk() {
-  local src disk size rota typ
-  # Quita la notación de subvolumen btrfs: /dev/x[/subvol] -> /dev/x
-  src="$(findmnt -no SOURCE / 2>/dev/null | sed 's/\[.*//')"
-  # Sube hasta el disco físico que contiene la raíz.
-  disk="$(lsblk -no PKNAME "$src" 2>/dev/null | head -n1)"
-  [[ -z "$disk" ]] && disk="$(lsblk -ndo NAME "$src" 2>/dev/null | head -n1)"
+  local disk size rota typ
+  # Resuelve el disco físico que contiene la raíz. Reusa _system_disk, que sube
+  # hasta el disco real atravesando LVM (LV -> partición -> disco); un solo nivel
+  # de PKNAME no alcanza y dejaba "? (HDD)" cuando la raíz está sobre LVM.
+  disk="$(_system_disk)"
   [[ -z "$disk" ]] && { echo "N/D"; return; }
   size="$(lsblk -dno SIZE "/dev/$disk" 2>/dev/null | head -n1)"
   rota="$(lsblk -dno ROTA "/dev/$disk" 2>/dev/null | head -n1)"
@@ -188,6 +187,20 @@ service_state() {
   else
     echo "not-installed"
   fi
+}
+
+# URL de acceso de un servicio (vacío si no expone una). Fuente única de los
+# puertos: la usan tanto el resumen post-instalación como el módulo de estado,
+# para no duplicar los puertos en varios lugares.
+service_url() {
+  local service="$1" ip="${2:-$(get_ip)}"
+  case "$service" in
+    jellyfin)    echo "http://$ip:8096" ;;
+    qbittorrent) echo "http://$ip:8080" ;;
+    AdGuardHome) echo "http://$ip:3000" ;;
+    smbd)        echo "smb://$ip" ;;
+    *)           echo "" ;;
+  esac
 }
 
 # Restaura componentes (Jellyfin, qBittorrent, Samba) leyendo desde la raíz de

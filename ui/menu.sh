@@ -133,7 +133,7 @@ run_module_gauge() {
   rc=0
   wait "$pid" || rc=$?
   if [[ $rc -ne 0 ]]; then
-    msg "El módulo '$module' terminó con errores (código $rc).\n\nRevisá el log:\n$LOG_DIR/$module.log"
+    msg "El módulo '$module' terminó con errores (código $rc).\n\nRevise el log:\n$LOG_DIR/$module.log"
   fi
 }
 
@@ -157,7 +157,9 @@ install_full() {
   done
 
   run_module status
-  msg "Instalación completa finalizada.\n\nJellyfin: http://$(get_ip):8096\nqBittorrent: http://$(get_ip):8080\nAdGuard: http://$(get_ip):3000"
+  local ip
+  ip="$(get_ip)"
+  msg "Instalación completa finalizada.\n\nJellyfin: $(service_url jellyfin "$ip")\nqBittorrent: $(service_url qbittorrent "$ip")\nAdGuard: $(service_url AdGuardHome "$ip")"
 }
 
 install_custom() {

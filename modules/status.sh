@@ -16,8 +16,12 @@ source "$(dirname "$0")/../lib/common.sh"
   hostname -I || true
   echo
   echo "== Servicios =="
+  ip="$(get_ip)"
   for s in jellyfin qbittorrent smbd AdGuardHome wol.service; do
-    printf "%-16s %s\n" "$s" "$(service_state "$s")"
+    state="$(service_state "$s")"
+    url=""
+    [[ "$state" == "active" ]] && url="$(service_url "$s" "$ip")"
+    printf "%-16s %-14s %s\n" "$s" "$state" "$url"
   done
   echo
   echo "== Disco =="
