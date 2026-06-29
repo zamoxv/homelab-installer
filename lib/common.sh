@@ -141,16 +141,19 @@ hw_ram() {
 }
 
 hw_disk() {
-  local disk size rota typ
-  # Resuelve el disco físico que contiene la raíz. Reusa _system_disk, que sube
-  # hasta el disco real atravesando LVM (LV -> partición -> disco); un solo nivel
-  # de PKNAME no alcanza y dejaba "? (HDD)" cuando la raíz está sobre LVM.
-  disk="$(_system_disk)"
+  local src disk size rota typ
+  # Quita la notación de subvolumen btrfs: /dev/x[/subvol] -> /dev/x
+  src="$(findmnt -no SOURCE / 2>/dev/null | sed 's/\[.*//')"
+  # Disco físico que contiene la raíz. 'lsblk -s' recorre las dependencias en
+  # sentido inverso (desde el LV/partición/cripto HACIA ABAJO hasta el disco
+  # real); subir con PKNAME no alcanza en LVM y dejaba "? (HDD)". '-r' evita los
+  # caracteres de árbol en el nombre; nos quedamos con la primera fila TYPE=disk.
+  disk="$(lsblk -srnpo NAME,TYPE "$src" 2>/dev/null | awk '$2=="disk"{print $1; exit}')"
   [[ -z "$disk" ]] && { echo "N/D"; return; }
-  size="$(lsblk -dno SIZE "/dev/$disk" 2>/dev/null | head -n1)"
-  rota="$(lsblk -dno ROTA "/dev/$disk" 2>/dev/null | head -n1)"
+  size="$(lsblk -dno SIZE "$disk" 2>/dev/null | head -n1)"
+  rota="$(lsblk -dno ROTA "$disk" 2>/dev/null | head -n1)"
   [[ "$rota" == "0" ]] && typ="SSD" || typ="HDD"
-  echo "/dev/$disk ${size:-?} ($typ)"
+  echo "$disk ${size:-?} ($typ)"
 }
 
 # Barra ASCII del uso de la partición raíz.
