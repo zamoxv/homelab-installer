@@ -211,9 +211,32 @@ service_url() {
   esac
 }
 
-# Restaura componentes (Jellyfin, qBittorrent, Samba) leyendo desde la raíz de
-# un sistema de archivos viejo montado en $1. Copia solo lo que existe. Lo usan
-# tanto "restaurar desde disco viejo" como la migración asistida.
+# Fuerza a AdGuard a escuchar en todas las interfaces (0.0.0.0) tras migrar su
+# YAML: el panel web (http.address) y el DNS (dns.bind_hosts). Sin esto, si el
+# YAML traía la IP vieja del origen, AdGuard no levanta en la máquina nueva.
+# Conserva el puerto del panel. Asume el formato de lista en bloque de AdGuard.
+adguard_normalize_bind() {
+  local yaml="$1" tmp
+  [[ -f "$yaml" ]] || return 0
+  # http.address: solo la PRIMERA coincidencia (el panel web), conservando puerto.
+  sudo sed -i -E '0,/^[[:space:]]*address:[[:space:]]/ s|^([[:space:]]*address:[[:space:]]*).*:([0-9]+)[[:space:]]*$|\10.0.0.0:\2|' "$yaml"
+  # dns.bind_hosts: reemplaza TODA la lista (puede tener varias entradas) por una
+  # sola 0.0.0.0, para escuchar en todas las interfaces sin arrastrar la IP vieja.
+  tmp="$(mktemp)"
+  sudo awk '
+    /^[[:space:]]*bind_hosts:[[:space:]]*$/ {
+      match($0, /^[[:space:]]*/); ind = substr($0, 1, RLENGTH)
+      print; print ind "  - 0.0.0.0"; in_bh = 1; next
+    }
+    in_bh && /^[[:space:]]*-[[:space:]]/ { next }
+    { in_bh = 0; print }
+  ' "$yaml" > "$tmp" && sudo cp "$tmp" "$yaml" || true
+  rm -f "$tmp"
+}
+
+# Restaura componentes (Jellyfin, qBittorrent, Samba, AdGuard) leyendo desde la
+# raíz de un sistema de archivos viejo montado en $1. Copia solo lo que existe.
+# Lo usan tanto "restaurar desde disco viejo" como la migración asistida.
 restore_components_from_root() {
   local root="$1" home
   home="$(getent passwd "$SERVER_USER" | cut -d: -f6)"
@@ -241,6 +264,16 @@ restore_components_from_root() {
     sudo systemctl restart smbd 2>/dev/null || true
   fi
 
+  # AdGuard Home: toda la config (listas, reglas, clientes, DNS) vive en un solo
+  # YAML. Se restaura solo si AdGuard ya está instalado en el destino.
+  if [[ -f "$root/opt/AdGuardHome/AdGuardHome.yaml" && -d /opt/AdGuardHome ]]; then
+    sudo systemctl stop AdGuardHome 2>/dev/null || true
+    sudo cp /opt/AdGuardHome/AdGuardHome.yaml "/opt/AdGuardHome/AdGuardHome.yaml.backup.$(date +%F-%H%M%S)" 2>/dev/null || true
+    sudo cp "$root/opt/AdGuardHome/AdGuardHome.yaml" /opt/AdGuardHome/AdGuardHome.yaml
+    adguard_normalize_bind /opt/AdGuardHome/AdGuardHome.yaml
+    sudo systemctl start AdGuardHome 2>/dev/null || true
+  fi
+
   # Claves SSH autorizadas: para no volver a correr ssh-copy-id tras migrar.
   if sudo test -f "$root/home/$SERVER_USER/.ssh/authorized_keys"; then
     import_authorized_keys "$root/home/$SERVER_USER/.ssh/authorized_keys"
@@ -259,6 +292,51 @@ import_authorized_keys() {
     | sort -u > "$home/.ssh/authorized_keys.new"
   mv "$home/.ssh/authorized_keys.new" "$home/.ssh/authorized_keys"
   chmod 600 "$home/.ssh/authorized_keys"
+}
+
+# Reescribe la ruta de media en el smb.conf restaurado cuando ESTA máquina la
+# tiene en un punto de montaje distinto al del origen (ej. el origen usa
+# /srv/media y acá la media va a /srv/media2). Detecta la raíz del origen leyendo
+# el primer share de media (no el de backups) y PREGUNTA el destino real en vez
+# de asumirlo. Si el usuario deja el mismo valor, no toca nada.
+samba_remap_media() {
+  local conf="/etc/samba/smb.conf" old new tmp
+  [[ -f "$conf" ]] || return 0
+  old="$(sudo sed -n -E 's#^[[:space:]]*path[[:space:]]*=[[:space:]]*(/srv/[^[:space:]]+).*#\1#p' "$conf" 2>/dev/null \
+        | grep -vF "$BACKUP_ROOT" | head -n1 || true)"
+  old="${old%/*}"   # quita la última carpeta -> raíz de media del origen
+  [[ -n "$old" && "$old" != "/srv" ]] || return 0
+  new="$(input_box "Migración — ruta de media" "Los recursos de media del origen apuntan a:\n$old\n\n¿En qué punto de montaje está la media en ESTA máquina?" "$old")" || return 0
+  [[ -n "$new" && "$new" != "$old" ]] || return 0
+  # Reemplazo literal del prefijo (awk index/substr) para no romper con rutas que
+  # contengan metacaracteres de regex o el delimitador de sed.
+  tmp="$(mktemp)"
+  sudo awk -v old="$old/" -v new="$new/" '
+    $0 ~ /^[[:space:]]*path[[:space:]]*=/ {
+      i = index($0, old)
+      if (i > 0) $0 = substr($0, 1, i - 1) new substr($0, i + length(old))
+    }
+    { print }
+  ' "$conf" > "$tmp" && sudo cp "$tmp" "$conf" || true
+  rm -f "$tmp"
+  sudo systemctl restart smbd 2>/dev/null || true
+}
+
+# Asegura acceso SSH sin clave a $1 (user@host). Si falta, ofrece configurarlo
+# con ssh-copy-id (genera una clave local si no hay). Devuelve 0 con acceso, 1 si
+# el usuario cancela o no se pudo establecer. Lo usan los flujos de migración SSH.
+ensure_ssh_access() {
+  local target="$1"
+  ssh -o BatchMode=yes -o ConnectTimeout=5 "$target" true 2>/dev/null && return 0
+  confirm "No hay acceso SSH sin clave a $target.\n\n¿Configurarlo ahora? Se genera una clave local si no existe y se copia al origen (pedirá la contraseña del origen una sola vez)." || return 1
+  [[ -f "$HOME/.ssh/id_ed25519.pub" || -f "$HOME/.ssh/id_rsa.pub" ]] \
+    || ssh-keygen -t ed25519 -N "" -f "$HOME/.ssh/id_ed25519"
+  clear
+  echo "Copiando la clave pública a $target."
+  echo "Ingrese la contraseña del origen cuando la pida:"
+  echo
+  ssh-copy-id "$target" || return 1
+  ssh -o BatchMode=yes -o ConnectTimeout=5 "$target" true 2>/dev/null
 }
 
 # --- Disco viejo: detección, LVM y montaje en SOLO LECTURA (compartido) ---

@@ -47,6 +47,15 @@ if [[ -f "$work/samba/smb.conf" ]]; then
   sudo systemctl restart smbd 2>/dev/null || true
 fi
 
+# AdGuard Home (solo si AdGuard ya está instalado en el destino)
+if [[ -f "$work/adguard/AdGuardHome.yaml" && -d /opt/AdGuardHome ]]; then
+  sudo systemctl stop AdGuardHome 2>/dev/null || true
+  sudo cp /opt/AdGuardHome/AdGuardHome.yaml "/opt/AdGuardHome/AdGuardHome.yaml.backup.$(date +%F-%H%M%S)" 2>/dev/null || true
+  sudo cp "$work/adguard/AdGuardHome.yaml" /opt/AdGuardHome/AdGuardHome.yaml
+  adguard_normalize_bind /opt/AdGuardHome/AdGuardHome.yaml
+  sudo systemctl start AdGuardHome 2>/dev/null || true
+fi
+
 # Claves SSH autorizadas
 [[ -f "$work/ssh/authorized_keys" ]] && import_authorized_keys "$work/ssh/authorized_keys"
 

@@ -14,7 +14,7 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 sudo mkdir -p "$BACKUP_ROOT"
-mkdir -p "$WORK/jellyfin" "$WORK/qbittorrent" "$WORK/samba" "$WORK/hli" "$WORK/ssh"
+mkdir -p "$WORK/jellyfin" "$WORK/qbittorrent" "$WORK/samba" "$WORK/adguard" "$WORK/hli" "$WORK/ssh"
 
 # Jellyfin: config y metadata (NO media)
 [[ -d /var/lib/jellyfin ]] && sudo rsync -aHAX /var/lib/jellyfin/ "$WORK/jellyfin/lib/" 2>/dev/null || true
@@ -28,6 +28,9 @@ qb_home="${qb_home:-/home/$SERVER_USER}"
 
 # Samba
 [[ -f /etc/samba/smb.conf ]] && sudo cp /etc/samba/smb.conf "$WORK/samba/smb.conf"
+
+# AdGuard Home (toda la config en un YAML)
+[[ -f /opt/AdGuardHome/AdGuardHome.yaml ]] && sudo cp /opt/AdGuardHome/AdGuardHome.yaml "$WORK/adguard/AdGuardHome.yaml" 2>/dev/null || true
 
 # Config del HLI
 [[ -f "$CONFIG_FILE" ]] && cp "$CONFIG_FILE" "$WORK/hli/default.conf"
@@ -46,17 +49,18 @@ backup:
     - jellyfin (config + metadata, sin media)
     - qbittorrent (config + estado)
     - samba (smb.conf)
+    - adguard (AdGuardHome.yaml)
     - hli (default.conf)
   nota: "La media de $MEDIA_ROOT NO esta incluida; vive en el disco de datos."
 EOF
 
 # Empaquetar (el contenido se trajo con sudo: normalizar dueño antes de tar)
 sudo chown -R "$USER:$USER" "$WORK"
-tar -czf "$WORK/archive.tar.gz" -C "$WORK" jellyfin qbittorrent samba hli ssh config.yml
+tar -czf "$WORK/archive.tar.gz" -C "$WORK" jellyfin qbittorrent samba adguard hli ssh config.yml
 sudo mv "$WORK/archive.tar.gz" "$ARCHIVE"
 sudo chown "$SERVER_USER:$MEDIA_GROUP" "$ARCHIVE" 2>/dev/null || true
 
 size="$(du -h "$ARCHIVE" | cut -f1)"
-msg "Backup creado:\n\n$ARCHIVE\n($size)\n\nIncluye config de Jellyfin, qBittorrent, Samba y HLI.\nNO incluye la media de $MEDIA_ROOT."
+msg "Backup creado:\n\n$ARCHIVE\n($size)\n\nIncluye config de Jellyfin, qBittorrent, Samba, AdGuard y HLI.\nNO incluye la media de $MEDIA_ROOT."
 
 mark_done backup

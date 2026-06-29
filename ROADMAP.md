@@ -165,3 +165,42 @@ para streaming; el Ultrabay (SATA interno) es la opción más confiable para 24/
 - [x] Validado en hardware real (ThinkPad T400, Ubuntu 26.04): instalación,
   perfil 24/7, Samba, servicios, WOL, expansión de LVM y transferencia de media.
 - [x] Etiqueta `v1.0.0`.
+
+---
+
+### v1.1 — AdGuard en migración + migración por SSH
+
+Extender la migración para cubrir AdGuard y permitir tomar la configuración de
+una máquina vieja **encendida** por SSH (sin apagarla ni sacarle el disco). El
+norte: copiar configuración y media por red, hacer swap de IP y que el equipo
+nuevo herede al anterior.
+
+- [x] AdGuard al núcleo `restore_components_from_root`: lee
+  `/opt/AdGuardHome/AdGuardHome.yaml` y lo restaura, igual que Samba. Agregarlo
+  también a `backup.sh` y `restore.sh` por simetría.
+- [x] Normalizar `bind_host` a `0.0.0.0` al migrar el YAML de AdGuard, para que
+  levante con la IP nueva tras el swap.
+- [x] Migración por SSH: módulo nuevo que hace `rsync` de los paths HLI del host
+  vivo a una raíz temporal y reusa `restore_components_from_root`.
+- [x] Path destino de media configurable: la migración recibe el punto de montaje
+  real (ej. `/srv/media2`) y reescribe `path` en `smb.conf` en consecuencia.
+- [x] Copia de media por SSH: `rsync` grande con el origen vivo + incremental
+  final antes del cutover, para minimizar el downtime.
+
+### v1.2 — IA local (BitNet)
+
+Correr un modelo de lenguaje local en el servidor, **sin GPU**, aprovechando que
+el M70q queda libre la mayor parte del tiempo. BitNet (b1.58) está optimizado
+para inferencia en CPU: poca RAM y eficiente con AVX2. Filosofía: **llegar y
+usar**, y poder **actualizar runtime y modelo sin comandos a mano**.
+
+- [ ] `modules/localai.sh`: instala dependencias de build, compila `bitnet.cpp`
+  y descarga el modelo `BitNet-b1.58-2B-4T`. Idempotente.
+- [ ] Servicio systemd que levanta el servidor de inferencia (API compatible con
+  OpenAI) en un puerto fijo, con arranque automático. "Llegar y usar".
+- [ ] Integración con el dashboard: registrar el servicio y su URL en
+  `service_url` para que aparezca junto al resto (Jellyfin, AdGuard, etc.).
+- [ ] Actualización fácil: opción para actualizar el runtime (git pull + rebuild)
+  y para cambiar/actualizar el modelo, reutilizando el módulo de actualización.
+- [ ] Guardas de recursos: limitar hilos y prioridad (`nice`/`CPUQuota`) para que
+  la inferencia no compita con los servicios cuando estén activos.
