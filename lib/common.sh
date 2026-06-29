@@ -140,15 +140,20 @@ hw_ram() {
   free -h 2>/dev/null | awk '/Mem:/ {print $2}'
 }
 
-hw_disk() {
-  local src disk size rota typ
-  # Quita la notación de subvolumen btrfs: /dev/x[/subvol] -> /dev/x
+# Disco físico (ruta completa, ej. /dev/nvme0n1) que contiene la raíz. 'lsblk -s'
+# recorre las dependencias en sentido inverso (desde el LV/partición/cripto HACIA
+# ABAJO hasta el disco real); subir con PKNAME no alcanza en LVM. '-r' evita los
+# caracteres de árbol en el nombre; se toma la primera fila TYPE=disk. Quita la
+# notación de subvolumen btrfs (/dev/x[/subvol] -> /dev/x).
+_root_disk() {
+  local src
   src="$(findmnt -no SOURCE / 2>/dev/null | sed 's/\[.*//')"
-  # Disco físico que contiene la raíz. 'lsblk -s' recorre las dependencias en
-  # sentido inverso (desde el LV/partición/cripto HACIA ABAJO hasta el disco
-  # real); subir con PKNAME no alcanza en LVM y dejaba "? (HDD)". '-r' evita los
-  # caracteres de árbol en el nombre; nos quedamos con la primera fila TYPE=disk.
-  disk="$(lsblk -srnpo NAME,TYPE "$src" 2>/dev/null | awk '$2=="disk"{print $1; exit}')"
+  lsblk -srnpo NAME,TYPE "$src" 2>/dev/null | awk '$2=="disk"{print $1; exit}'
+}
+
+hw_disk() {
+  local disk size rota typ
+  disk="$(_root_disk)"
   [[ -z "$disk" ]] && { echo "N/D"; return; }
   size="$(lsblk -dno SIZE "$disk" 2>/dev/null | head -n1)"
   rota="$(lsblk -dno ROTA "$disk" 2>/dev/null | head -n1)"
@@ -262,9 +267,13 @@ import_authorized_keys() {
 OLD_DISK_MNT=""
 OLD_DISK_VG=""
 
-# Disco físico que contiene la raíz (a EXCLUIR siempre).
+# Disco del sistema en nombre corto (ej. nvme0n1), a EXCLUIR siempre. Reusa
+# _root_disk, que resuelve bien sobre LVM; el recorrido PKNAME queda solo como
+# red de seguridad por si _root_disk no devolviera nada.
 _system_disk() {
-  local src p1 p2
+  local d src p1 p2
+  d="$(_root_disk)"
+  [[ -n "$d" ]] && { basename "$d"; return; }
   src="$(findmnt -no SOURCE / 2>/dev/null | sed 's/\[.*//')"
   p1="$(lsblk -no PKNAME "$src" 2>/dev/null | head -n1 || true)"
   [[ -z "$p1" ]] && p1="$(basename "$src")"
