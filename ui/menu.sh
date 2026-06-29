@@ -60,18 +60,22 @@ backups_menu() {
       --backtitle "HomeLab Installer" \
       --title "Respaldos y migración" \
       --menu "Seleccione una opción:" \
-      17 78 7 \
+      19 78 8 \
       crear "Crear backup de configuración (.tar.gz)" \
       restaurar "Restaurar desde un backup (.tar.gz)" \
       config "Restaurar config desde un disco viejo (automático)" \
+      config-ssh "Migrar config desde una máquina encendida (SSH)" \
       media "Transferir media desde un disco viejo (automático)" \
+      media-ssh "Transferir media desde una máquina encendida (SSH)" \
       volver "Volver al menú principal" \
       3>&1 1>&2 2>&3) || return
     { case "$opt" in
       crear) run_module backup ;;
       restaurar) run_module restore ;;
       config) run_module migrate ;;
+      config-ssh) run_module migrate-ssh ;;
       media) run_module media-transfer ;;
+      media-ssh) run_module media-transfer-ssh ;;
       volver) return ;;
     esac; } || true
   done
