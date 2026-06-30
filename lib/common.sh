@@ -20,6 +20,33 @@ LOG_DIR="/var/log/homelab-installer"
 STATE_DIR="/var/lib/homelab-installer"
 STATE_FILE="$STATE_DIR/state"
 
+# Subcarpetas estándar de media (backups/config/restore van aparte).
+MEDIA_FOLDERS=(peliculas series musica libros fotos videos downloads transcode)
+
+# Lista los puntos de montaje de media: MEDIA_ROOT y los /srv/mediaN adicionales
+# que estén montados (discos de datos sumados con datadisk). Una raíz por línea.
+media_roots() {
+  local d
+  echo "$MEDIA_ROOT"   # raíz base de media, exista o no todavía (storage la crea)
+  for d in "${MEDIA_ROOT}"[0-9]*; do
+    if [[ -d "$d" ]] && mountpoint -q "$d" 2>/dev/null; then echo "$d"; fi
+  done
+}
+
+# Crea la estructura estándar de carpetas de media en la raíz $1, con dueño y
+# permisos del grupo de media. Idempotente. La usan storage (MEDIA_ROOT) y
+# datadisk (cada disco nuevo).
+create_media_skeleton() {
+  local root="$1" f
+  sudo mkdir -p "$root"
+  for f in "${MEDIA_FOLDERS[@]}"; do sudo mkdir -p "$root/$f"; done
+  sudo chown -R "$SERVER_USER:$MEDIA_GROUP" "$root"
+  # setgid en directorios (el grupo se hereda) y 0664 en archivos: no marca como
+  # ejecutables los archivos de media si el disco ya traía contenido.
+  sudo find "$root" -type d -exec chmod 2775 {} + 2>/dev/null || true
+  sudo find "$root" -type f -exec chmod 0664 {} + 2>/dev/null || true
+}
+
 ensure_runtime() {
   sudo mkdir -p "$LOG_DIR" "$STATE_DIR"
   sudo touch "$STATE_FILE"
@@ -313,26 +340,39 @@ import_authorized_keys() {
 # /srv/media y acá la media va a /srv/media2). Detecta la raíz del origen leyendo
 # el primer share de media (no el de backups) y PREGUNTA el destino real en vez
 # de asumirlo. Si el usuario deja el mismo valor, no toca nada.
-samba_remap_media() {
-  local conf="/etc/samba/smb.conf" old new tmp
-  [[ -f "$conf" ]] || return 0
-  old="$(sudo sed -n -E 's#^[[:space:]]*path[[:space:]]*=[[:space:]]*(/srv/[^[:space:]]+).*#\1#p' "$conf" 2>/dev/null \
-        | grep -vF "$BACKUP_ROOT" | head -n1 || true)"
-  old="${old%/*}"   # quita la última carpeta -> raíz de media del origen
-  [[ -n "$old" && "$old" != "/srv" ]] || return 0
-  new="$(input_box "Migración — ruta de media" "Los recursos de media del origen apuntan a:\n$old\n\n¿En qué punto de montaje está la media en ESTA máquina?" "$old")" || return 0
-  [[ -n "$new" && "$new" != "$old" ]] || return 0
-  # Reemplazo literal del prefijo (awk index/substr) para no romper con rutas que
-  # contengan metacaracteres de regex o el delimitador de sed.
-  tmp="$(mktemp)"
-  sudo awk -v old="$old/" -v new="$new/" '
-    $0 ~ /^[[:space:]]*path[[:space:]]*=/ {
-      i = index($0, old)
-      if (i > 0) $0 = substr($0, 1, i - 1) new substr($0, i + length(old))
-    }
-    { print }
-  ' "$conf" > "$tmp" && sudo cp "$tmp" "$conf" || true
-  rm -f "$tmp"
+# Emite un bloque de recurso Samba (uso interno de samba_write_shares).
+_samba_share_block() {
+  cat <<EOF
+
+[$1]
+   path = $2
+   browseable = yes
+   read only = no
+   guest ok = no
+   valid users = $SERVER_USER
+   force group = $MEDIA_GROUP
+   create mask = 0664
+   directory mask = 2775
+EOF
+}
+
+# (Re)escribe el bloque de recursos del HLI en smb.conf: un recurso por disco de
+# media (media_roots) + backups. La usan el módulo samba y la migración, para que
+# los shares reflejen los discos de ESTA máquina sin reescribir rutas a mano.
+samba_write_shares() {
+  [[ -f /etc/samba/smb.conf ]] || return 0
+  sudo cp /etc/samba/smb.conf "/etc/samba/smb.conf.backup.$(date +%F-%H%M%S)" 2>/dev/null || true
+  sudo sed -i '/### HOMELAB-INSTALLER START/,/### HOMELAB-INSTALLER END/d' /etc/samba/smb.conf
+  {
+    echo ""
+    echo "### HOMELAB-INSTALLER START"
+    while read -r root; do
+      [[ -n "$root" ]] || continue
+      _samba_share_block "$(basename "$root")" "$root"
+    done < <(media_roots)
+    _samba_share_block backups "$BACKUP_ROOT"
+    echo "### HOMELAB-INSTALLER END"
+  } | sudo tee -a /etc/samba/smb.conf >/dev/null
   sudo systemctl restart smbd 2>/dev/null || true
 }
 

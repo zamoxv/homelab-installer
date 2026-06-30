@@ -77,8 +77,8 @@ echo "Aplicando configuración a esta máquina..."
 # --- 4) Aplicar con el mismo motor de la migración por disco ---
 restore_components_from_root "$ROOT"
 
-# Si la media en esta máquina vive en otro punto de montaje, reescribe el smb.conf.
-samba_remap_media
+# Regenera los recursos de Samba para los discos de ESTA máquina.
+samba_write_shares
 
 msg "Migración por SSH finalizada desde $target.\n\nConfig de Jellyfin, qBittorrent, Samba y AdGuard aplicada.\nLa media se copia por separado."
 

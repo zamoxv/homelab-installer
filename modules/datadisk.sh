@@ -81,8 +81,15 @@ echo "UUID=$UUID $MP ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab >/dev/nu
 sudo systemctl daemon-reload 2>/dev/null || true
 sudo mount "$MP" 2>/dev/null || sudo mount -a
 
-sudo chown -R "$SERVER_USER:$MEDIA_GROUP" "$MP"
-sudo chmod -R 2775 "$MP"
+# Si el disco va a una raíz del pool (/srv/media o /srv/media<dígitos>), crea la
+# estructura de carpetas sobre él. Si no (otro punto de montaje), solo ajusta
+# dueño y permisos sin imponerle la estructura de media.
+if [[ "$MP" == "$MEDIA_ROOT" || "$MP" =~ ^"$MEDIA_ROOT"[0-9]+$ ]]; then
+  create_media_skeleton "$MP"
+else
+  sudo chown -R "$SERVER_USER:$MEDIA_GROUP" "$MP"
+  sudo chmod -R 2775 "$MP"
+fi
 
 msg "Disco de datos configurado.\n\n$DEV → $MP\nEn /etc/fstab por UUID, con 'nofail' (el server arranca aunque el disco no esté).\nSe monta solo en cada arranque."
 

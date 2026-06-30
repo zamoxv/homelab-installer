@@ -187,7 +187,24 @@ nuevo herede al anterior.
 - [x] Copia de media por SSH: `rsync` grande con el origen vivo + incremental
   final antes del cutover, para minimizar el downtime.
 
-### v1.2 — IA local (BitNet)
+### v1.2 — Soporte multi-disco
+
+Que el HLI maneje un pool de discos de datos que crece (`/srv/media`,
+`/srv/media2`, `/srv/media3`...). Una sola fuente de verdad (`media_roots`) que
+todos los módulos leen, así sumar un disco lo integra en todo el sistema solo.
+
+- [x] `media_roots` en common.sh: lista `MEDIA_ROOT` + cada `/srv/mediaN`
+  montado. `create_media_skeleton <raíz>` y `MEDIA_FOLDERS` compartidos.
+- [x] `datadisk`: al montar un disco nuevo bajo `/srv/media*`, crea la estructura
+  de carpetas de media sobre él (reusa `create_media_skeleton`).
+- [x] `storage`: crea las carpetas en cada raíz montada del pool (reusa
+  `create_media_skeleton`, idempotente).
+- [x] `samba`: un recurso por disco (`[media]`, `[media2]`, ...) iterando
+  `media_roots`, en vez de un recurso por carpeta.
+- [x] Dashboard: sección con cada disco de media y su uso (usado/total).
+- [ ] (opcional) Jellyfin: agregar las carpetas del disco nuevo como bibliotecas.
+
+### v1.3 — IA local (BitNet)
 
 Correr un modelo de lenguaje local en el servidor, **sin GPU**, aprovechando que
 el M70q queda libre la mayor parte del tiempo. BitNet (b1.58) está optimizado

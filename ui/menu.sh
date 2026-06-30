@@ -18,6 +18,17 @@ show_dashboard() {
   smb="$(service_state smbd)"
   ag="$(service_state AdGuardHome)"
 
+  local media_block="" mr du
+  while read -r mr; do
+    [[ -n "$mr" ]] || continue
+    du="$(df -h --output=used,size "$mr" 2>/dev/null | tail -n1 | awk '{print $1, $2}')" || true
+    if [[ -n "$du" ]]; then
+      media_block+="$(printf '  %-14s: %s usado / %s total' "$mr" "${du%% *}" "${du##* }")"$'\n'
+    else
+      media_block+="$(printf '  %-14s: sin montar' "$mr")"$'\n'
+    fi
+  done < <(media_roots)
+
   cat > /tmp/homelab-dashboard.txt <<EOF
 ========================================================
             HomeLab Installer
@@ -43,9 +54,8 @@ Servicios
 Espacio en /
   $disk_use
 
-Rutas
-  Media         : $MEDIA_ROOT
-  Backups       : $BACKUP_ROOT
+Discos de media
+${media_block}  Backups       : $BACKUP_ROOT
   Logs          : $LOG_DIR
 ========================================================
 EOF

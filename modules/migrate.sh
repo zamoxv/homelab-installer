@@ -16,8 +16,8 @@ confirm "Disco viejo montado en SOLO LECTURA:\n$OLD_DISK_MNT\n\nSe restaurará l
 
 restore_components_from_root "$OLD_DISK_MNT"
 
-# Si la media en esta máquina vive en otro punto de montaje, reescribe el smb.conf.
-samba_remap_media
+# Regenera los recursos de Samba para los discos de ESTA máquina.
+samba_write_shares
 
 msg "Config restaurada desde el disco viejo (montado solo lectura: su contenido no se modificó)."
 mark_done migrate

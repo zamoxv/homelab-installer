@@ -40,10 +40,12 @@ expand_lvm_root
 sudo groupadd -f "$MEDIA_GROUP"
 sudo usermod -aG "$MEDIA_GROUP" "$SERVER_USER" || true
 
-sudo mkdir -p "$MEDIA_ROOT"/{peliculas,series,musica,libros,fotos,videos,downloads,transcode}
-sudo mkdir -p "$BACKUP_ROOT" "$CONFIG_ROOT" "$RESTORE_ROOT"
+# Estructura de media en cada raíz montada (MEDIA_ROOT + discos ya sumados al
+# pool). Idempotente: re-correrlo crea las carpetas en los discos que falten.
+while read -r mroot; do create_media_skeleton "$mroot"; done < <(media_roots)
 
-sudo chown -R "$SERVER_USER:$MEDIA_GROUP" "$MEDIA_ROOT" "$BACKUP_ROOT" "$CONFIG_ROOT" "$RESTORE_ROOT"
-sudo chmod -R 2775 "$MEDIA_ROOT" "$BACKUP_ROOT" "$CONFIG_ROOT" "$RESTORE_ROOT"
+sudo mkdir -p "$BACKUP_ROOT" "$CONFIG_ROOT" "$RESTORE_ROOT"
+sudo chown -R "$SERVER_USER:$MEDIA_GROUP" "$BACKUP_ROOT" "$CONFIG_ROOT" "$RESTORE_ROOT"
+sudo chmod -R 2775 "$BACKUP_ROOT" "$CONFIG_ROOT" "$RESTORE_ROOT"
 
 mark_done storage
