@@ -53,6 +53,7 @@ if [[ -f "$work/adguard/AdGuardHome.yaml" && -d /opt/AdGuardHome ]]; then
   sudo cp /opt/AdGuardHome/AdGuardHome.yaml "/opt/AdGuardHome/AdGuardHome.yaml.backup.$(date +%F-%H%M%S)" 2>/dev/null || true
   sudo cp "$work/adguard/AdGuardHome.yaml" /opt/AdGuardHome/AdGuardHome.yaml
   adguard_normalize_bind /opt/AdGuardHome/AdGuardHome.yaml
+  free_dns_port
   sudo systemctl start AdGuardHome 2>/dev/null || true
 fi
 
