@@ -339,6 +339,43 @@ ensure_ssh_access() {
   ssh -o BatchMode=yes -o ConnectTimeout=5 "$target" true 2>/dev/null
 }
 
+# Garantiza que rsync pueda leer archivos de root en el ORIGEN $1 (user@host). Si
+# el usuario del origen ya tiene sudo sin contraseña para rsync, no hace nada. Si
+# no, ofrece crear un permiso temporal NOPASSWD acotado SOLO a rsync (pide la
+# contraseña del origen una vez vía ssh -t) y marca que hay que quitarlo después.
+# Deja la ruta remota de rsync en REMOTE_RSYNC. El llamador DEBE poner un trap que
+# invoque cleanup_remote_sudo para no dejar el permiso colgado.
+HLI_REMOTE_SUDO_TMP=""
+REMOTE_RSYNC="rsync"
+ensure_remote_sudo() {
+  local target="$1" rpath
+  local sshc=(-o BatchMode=yes -o ConnectTimeout=5)
+  rpath="$(ssh "${sshc[@]}" "$target" 'command -v rsync' 2>/dev/null || true)"
+  [[ -n "$rpath" ]] || rpath="rsync"
+  REMOTE_RSYNC="$rpath"
+  # ¿Ya puede correr rsync con sudo sin contraseña?
+  if ssh "${sshc[@]}" "$target" "sudo -n $rpath --version" >/dev/null 2>&1; then
+    return 0
+  fi
+  confirm "El usuario del origen no tiene sudo sin contraseña.\n\nSe necesita para leer las configs protegidas (Jellyfin, AdGuard).\n\n¿Configurar un permiso temporal en el origen ahora? Se pedirá la contraseña del origen una sola vez y se quita automáticamente al terminar." || return 1
+  clear
+  echo "Configurando permiso temporal (solo rsync) en $target."
+  echo "Ingrese la contraseña del origen cuando la pida:"
+  echo
+  ssh -t "$target" "printf '%s ALL=(ALL) NOPASSWD: %s\n' \"\$(id -un)\" '$rpath' | sudo tee /etc/sudoers.d/99-hli-migrate >/dev/null && sudo chmod 440 /etc/sudoers.d/99-hli-migrate" || return 1
+  ssh "${sshc[@]}" "$target" "sudo -n $rpath --version" >/dev/null 2>&1 || return 1
+  HLI_REMOTE_SUDO_TMP="$target"
+  return 0
+}
+
+# Quita el sudoers temporal del origen si ensure_remote_sudo lo creó. Idempotente.
+cleanup_remote_sudo() {
+  [[ -n "$HLI_REMOTE_SUDO_TMP" ]] || return 0
+  ssh -o BatchMode=yes -o ConnectTimeout=5 "$HLI_REMOTE_SUDO_TMP" \
+    'sudo rm -f /etc/sudoers.d/99-hli-migrate' 2>/dev/null || true
+  HLI_REMOTE_SUDO_TMP=""
+}
+
 # --- Disco viejo: detección, LVM y montaje en SOLO LECTURA (compartido) ---
 # mount_old_disk deja la ruta raíz en OLD_DISK_MNT; el llamador limpia con
 # unmount_old_disk (y debería ponerlo en un trap EXIT).

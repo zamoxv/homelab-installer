@@ -25,12 +25,17 @@ target="$ruser@$host"
 # --- 1) Acceso SSH sin clave; si falta, se resuelve con ssh-copy-id ---
 ensure_ssh_access "$target" || { msg "No se pudo establecer acceso SSH a $target."; exit 0; }
 
-# --- 2) sudo sin contraseña en el origen (para leer configs de root) ---
+# --- 2) sudo en el origen para leer configs de root (Jellyfin, AdGuard). Si no
+#        hay sudo sin contraseña, ensure_remote_sudo ofrece configurarlo temporal
+#        en el origen; el trap limpia tanto el sudoers remoto como la raíz temp. ---
+ROOT=""
+trap 'cleanup_remote_sudo; [[ -n "$ROOT" ]] && rm -rf "$ROOT"' EXIT
+
 RSYNC_PATH=()
-if ssh -o BatchMode=yes -o ConnectTimeout=5 "$target" 'sudo -n true' 2>/dev/null; then
-  RSYNC_PATH=(--rsync-path="sudo rsync")
+if ensure_remote_sudo "$target"; then
+  RSYNC_PATH=(--rsync-path="sudo $REMOTE_RSYNC")
 else
-  confirm "$ruser no tiene sudo sin contraseña en el origen.\n\nSe necesita para leer las configs protegidas (Jellyfin, AdGuard). Sin eso, esos componentes se saltan y solo se migra lo accesible (Samba, qBittorrent, claves SSH).\n\n¿Continuar igual?" || exit 0
+  confirm "No se pudo configurar sudo en el origen.\n\nSe migrará solo lo accesible sin root (Samba, qBittorrent, claves SSH); Jellyfin y AdGuard se saltan.\n\n¿Continuar igual?" || exit 0
 fi
 
 # --- 3) Traer los paths a una raíz temporal con forma de filesystem ---
@@ -40,7 +45,6 @@ remote_home="${remote_home:-/home/$ruser}"
 confirm "Se migrará la config de $target a esta máquina:\n\nJellyfin, qBittorrent, Samba, AdGuard y claves SSH autorizadas.\n\nLa MEDIA no se copia acá (es un paso aparte). El origen no se modifica. ¿Continuar?" || exit 0
 
 ROOT="$(mktemp -d)"
-trap 'rm -rf "$ROOT"' EXIT
 
 # El destino dentro de ROOT usa el usuario LOCAL ($SERVER_USER), porque es lo que
 # restore_components_from_root espera; el origen puede tener otro home.
