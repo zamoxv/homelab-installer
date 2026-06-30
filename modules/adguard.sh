@@ -12,6 +12,7 @@ if ! systemctl cat AdGuardHome >/dev/null 2>&1; then
 fi
 
 sudo systemctl enable AdGuardHome
+free_dns_port
 sudo systemctl restart AdGuardHome || true
 
 mark_done adguard

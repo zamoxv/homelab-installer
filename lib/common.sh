@@ -234,6 +234,19 @@ adguard_normalize_bind() {
   rm -f "$tmp"
 }
 
+# Libera el puerto 53 que systemd-resolved ocupa por defecto (DNSStubListener),
+# imprescindible para que AdGuard (servidor DNS) pueda escuchar en 53. Repunta
+# /etc/resolv.conf a los upstreams reales de systemd-resolved para que la máquina
+# NO pierda resolución DNS al quitar el stub. Idempotente; no hace nada si
+# systemd-resolved no está en uso.
+free_dns_port() {
+  systemctl is-active --quiet systemd-resolved 2>/dev/null || return 0
+  sudo mkdir -p /etc/systemd/resolved.conf.d
+  printf '[Resolve]\nDNSStubListener=no\n' | sudo tee /etc/systemd/resolved.conf.d/99-homelab.conf >/dev/null
+  [[ -e /run/systemd/resolve/resolv.conf ]] && sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf || true
+  sudo systemctl restart systemd-resolved
+}
+
 # Restaura componentes (Jellyfin, qBittorrent, Samba, AdGuard) leyendo desde la
 # raíz de un sistema de archivos viejo montado en $1. Copia solo lo que existe.
 # Lo usan tanto "restaurar desde disco viejo" como la migración asistida.
@@ -271,6 +284,7 @@ restore_components_from_root() {
     sudo cp /opt/AdGuardHome/AdGuardHome.yaml "/opt/AdGuardHome/AdGuardHome.yaml.backup.$(date +%F-%H%M%S)" 2>/dev/null || true
     sudo cp "$root/opt/AdGuardHome/AdGuardHome.yaml" /opt/AdGuardHome/AdGuardHome.yaml
     adguard_normalize_bind /opt/AdGuardHome/AdGuardHome.yaml
+    free_dns_port
     sudo systemctl start AdGuardHome 2>/dev/null || true
   fi
 
