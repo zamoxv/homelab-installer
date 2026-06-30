@@ -52,16 +52,27 @@ mkdir -p "$ROOT/var/lib" "$ROOT/etc/samba" "$ROOT/etc/jellyfin" \
   "$ROOT/opt/AdGuardHome" "$ROOT/home/$SERVER_USER/.config" \
   "$ROOT/home/$SERVER_USER/.local/share" "$ROOT/home/$SERVER_USER/.ssh"
 
-# Configs de root (usan sudo remoto si está disponible).
-rsync -aHAX "${RSYNC_PATH[@]}" -e ssh "$target:/var/lib/jellyfin/" "$ROOT/var/lib/jellyfin/" 2>/dev/null || true
-rsync -aHAX "${RSYNC_PATH[@]}" -e ssh "$target:/etc/jellyfin/" "$ROOT/etc/jellyfin/" 2>/dev/null || true
-rsync -aHAX "${RSYNC_PATH[@]}" -e ssh "$target:/etc/samba/smb.conf" "$ROOT/etc/samba/" 2>/dev/null || true
-rsync -aHAX "${RSYNC_PATH[@]}" -e ssh "$target:/opt/AdGuardHome/AdGuardHome.yaml" "$ROOT/opt/AdGuardHome/" 2>/dev/null || true
+clear
+echo "Migrando configuración desde $target"
+echo "(el destino usa el usuario local: $SERVER_USER)"
+echo
 
-# Configs del usuario (sin sudo).
+# Configs de root (usan sudo remoto si está disponible). Jellyfin puede pesar por
+# la metadata: muestra progreso. El resto es chico, basta el rótulo.
+echo "  Jellyfin..."
+rsync -aHAX --info=progress2 "${RSYNC_PATH[@]}" -e ssh "$target:/var/lib/jellyfin/" "$ROOT/var/lib/jellyfin/" 2>/dev/null || true
+rsync -aHAX "${RSYNC_PATH[@]}" -e ssh "$target:/etc/jellyfin/" "$ROOT/etc/jellyfin/" 2>/dev/null || true
+echo "  Samba..."
+rsync -aHAX "${RSYNC_PATH[@]}" -e ssh "$target:/etc/samba/smb.conf" "$ROOT/etc/samba/" 2>/dev/null || true
+echo "  AdGuard..."
+rsync -aHAX "${RSYNC_PATH[@]}" -e ssh "$target:/opt/AdGuardHome/AdGuardHome.yaml" "$ROOT/opt/AdGuardHome/" 2>/dev/null || true
+echo "  qBittorrent..."
 rsync -aHAX -e ssh "$target:$remote_home/.config/qBittorrent/" "$ROOT/home/$SERVER_USER/.config/qBittorrent/" 2>/dev/null || true
 rsync -aHAX -e ssh "$target:$remote_home/.local/share/qBittorrent/" "$ROOT/home/$SERVER_USER/.local/share/qBittorrent/" 2>/dev/null || true
+echo "  Claves SSH..."
 rsync -aHAX -e ssh "$target:$remote_home/.ssh/authorized_keys" "$ROOT/home/$SERVER_USER/.ssh/" 2>/dev/null || true
+echo
+echo "Aplicando configuración a esta máquina..."
 
 # --- 4) Aplicar con el mismo motor de la migración por disco ---
 restore_components_from_root "$ROOT"
