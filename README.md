@@ -17,8 +17,13 @@ el servidor se convierte en un módulo, para no volver a resolverlo a mano.
 - **Perfil de servidor** (`24/7` / `Escritorio` / `Notebook`): energía y
   mantenimiento en un paso (no suspender, ignorar tapa, WOL, journald, fstrim,
   smartd según SSD/HDD).
-- **Backup y restore de migración**: empaqueta la configuración/estado (sin la
-  media) y restaura desde un backup HLI o desde un disco viejo montado.
+- **Migración completa**: config y estado (Jellyfin, qBittorrent, Samba, AdGuard
+  y claves SSH — sin la media) desde tres orígenes: un backup HLI `.tar.gz`, un
+  disco viejo montado, o **una máquina encendida por SSH** (sin apagarla ni sacar
+  el disco). AdGuard queda listo para servir DNS: libera el puerto 53 de
+  `systemd-resolved` y normaliza el `bind` a `0.0.0.0`.
+- **Multi-disco**: pool de discos de datos que crece (`/srv/media`, `/srv/media2`,
+  ...); al sumar un disco se integra solo en carpetas, recursos de Samba y dashboard.
 - **Health Check**: informe de discos (SMART), temperatura, RAM, espacio,
   servicios, IP, DNS, puertos y uptime.
 - **Dashboard** con detección de hardware (modelo, CPU, RAM, disco, distro).
@@ -48,7 +53,7 @@ la sesión para que los módulos en segundo plano no se cuelguen).
 | 4 | Perfil de servidor (energía y mantenimiento) |
 | 5 | Configurar Samba + carpetas |
 | 6 | Configurar disco de datos (montaje permanente por UUID) |
-| 7 | Respaldos y migración (crear / restaurar `.tar.gz` / disco viejo) |
+| 7 | Respaldos y migración (backup/restore `.tar.gz`, disco viejo o por SSH) |
 | 8 | Actualizar servidor |
 | 9 | Estado de servicios |
 | 10 | Diagnóstico (Health Check) |
@@ -74,6 +79,8 @@ Descubiertos automáticamente y ordenados por `HLI-ORDER`:
 | `media-transfer` | Transferir media desde un disco viejo (automático) | — |
 | `restore` | Restaurar desde un backup (.tar.gz) | — |
 | `backup` | Backup de configuración y estado | — |
+| `migrate-ssh` | Migrar config desde una máquina encendida (SSH) | — |
+| `media-transfer-ssh` | Transferir media desde una máquina encendida (SSH) | — |
 | `status` | Ver estado de servicios | — |
 | `healthcheck` | Diagnóstico del servidor | — |
 
@@ -119,6 +126,7 @@ ROADMAP.md          # plan por fases
 
 ```text
 /srv/media/{peliculas,series,musica,libros,fotos,videos,downloads,transcode}
+/srv/media2, /srv/media3, ...   # discos de datos extra (mismo esquema de carpetas)
 /srv/backups   /srv/config   /srv/restore
 ```
 
